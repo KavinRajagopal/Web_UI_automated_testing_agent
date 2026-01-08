@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 """
-Step 1 Test: Verify Bedrock Client works with Claude Opus 4.5
+Test suite for Bedrock Client (LLM integration).
 
-Run this script to verify:
+Verifies:
 1. AWS credentials are configured correctly
 2. Bedrock client can connect
 3. Claude Opus 4.5 responds via Converse API
+4. JSON parsing works
+5. Usage tracking works
 
 Usage:
-    python test_step1.py
+    python -m tests.test_bedrock_client
+    # or
+    pytest tests/test_bedrock_client.py -v
 """
 import os
 import sys
 import logging
 
-# Add src to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
 
 from src.llm.bedrock_client import BedrockClient
 
@@ -35,8 +40,8 @@ def print_banner(text: str):
 
 
 def test_bedrock_connection():
-    """Test 1: Verify Bedrock client initializes."""
-    print_banner("Test 1: Initialize Bedrock Client")
+    """Test: Verify Bedrock client initializes."""
+    print_banner("Test: Initialize Bedrock Client")
     
     try:
         client = BedrockClient(
@@ -55,8 +60,8 @@ def test_bedrock_connection():
 
 
 def test_simple_chat(client: BedrockClient):
-    """Test 2: Send a simple message and get response."""
-    print_banner("Test 2: Simple Chat")
+    """Test: Send a simple message and get response."""
+    print_banner("Test: Simple Chat")
     
     try:
         prompt = "Say 'Hello from Claude Opus 4.5!' and tell me what 2+2 equals. Keep it brief."
@@ -78,8 +83,8 @@ def test_simple_chat(client: BedrockClient):
 
 
 def test_system_prompt(client: BedrockClient):
-    """Test 3: Test with system prompt (for agent persona)."""
-    print_banner("Test 3: System Prompt (Agent Persona)")
+    """Test: Test with system prompt (for agent persona)."""
+    print_banner("Test: System Prompt (Agent Persona)")
     
     try:
         system_prompt = """You are a QA automation architect specializing in Selenium + pytest.
@@ -106,8 +111,8 @@ Always respond concisely and professionally."""
 
 
 def test_json_response(client: BedrockClient):
-    """Test 4: Request JSON response (for structured outputs)."""
-    print_banner("Test 4: JSON Response")
+    """Test: Request JSON response (for structured outputs)."""
+    print_banner("Test: JSON Response")
     
     try:
         system_prompt = "You are a JSON generator. Always respond with valid JSON only, no markdown."
@@ -135,8 +140,8 @@ def test_json_response(client: BedrockClient):
 
 
 def test_usage_stats(client: BedrockClient):
-    """Test 5: Verify usage tracking."""
-    print_banner("Test 5: Usage Statistics")
+    """Test: Verify usage tracking."""
+    print_banner("Test: Usage Statistics")
     
     stats = client.get_usage_stats()
     
@@ -150,9 +155,9 @@ def test_usage_stats(client: BedrockClient):
 
 
 def main():
-    """Run all Step 1 tests."""
+    """Run all Bedrock client tests."""
     print("\n" + "=" * 60)
-    print("  STEP 1: BEDROCK CLIENT TEST")
+    print("  BEDROCK CLIENT TESTS")
     print("  TringPlay Web UI Test Generation Agent")
     print("=" * 60)
     
@@ -161,7 +166,7 @@ def main():
     # Test 1: Initialize client
     client = test_bedrock_connection()
     if client is None:
-        print("\n✗ STEP 1 FAILED: Could not initialize Bedrock client")
+        print("\n✗ TESTS FAILED: Could not initialize Bedrock client")
         print("\nTroubleshooting:")
         print("1. Check AWS profile 'tring-kavin' exists: aws configure list --profile tring-kavin")
         print("2. Check region 'us-east-2' has Bedrock access")
@@ -186,7 +191,7 @@ def main():
     results.append(("Usage Stats", success))
     
     # Summary
-    print_banner("STEP 1 RESULTS")
+    print_banner("TEST RESULTS")
     
     all_passed = True
     for name, passed in results:
@@ -197,14 +202,11 @@ def main():
     
     if all_passed:
         print("\n" + "=" * 60)
-        print("  ✓ STEP 1 COMPLETE - ALL TESTS PASSED")
+        print("  ✓ ALL BEDROCK CLIENT TESTS PASSED")
         print("=" * 60)
-        print("\nBedrock client is working correctly.")
-        print("Ready to proceed to Step 2: Data Models")
-        print("\nNext command: python test_step2.py")
     else:
         print("\n" + "=" * 60)
-        print("  ✗ STEP 1 FAILED - Some tests did not pass")
+        print("  ✗ SOME TESTS FAILED")
         print("=" * 60)
         sys.exit(1)
 
