@@ -1,0 +1,3 @@
+test_id,test_name,module,priority,preconditions,steps,expected_result,test_data,tags,page_name
+TC_LOGIN_001,Valid Login with Email,authentication,P0,User is on login page,Navigate to login page|Enter valid email|Enter valid password|Click login button,User is redirected to home page,email=user@example.com|password=Password123!,"smoke,login",LoginPage
+TC_LOGIN_002,Invalid Login - Wrong Password,authentication,P1,User is on login page,Navigate to login page|Enter valid email|Enter wrong password|Click login button,Error message displayed,email=user@example.com|password=WrongPass,"negative,login",LoginPage

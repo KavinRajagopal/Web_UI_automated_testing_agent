@@ -1,0 +1,30 @@
+{
+  "module_name": "authentication",
+  "app_name": "TringPlay",
+  "app_url": "https://staging.tringplay.com",
+  "description": "Authentication module tests for TringPlay OTT web application",
+  
+  "environment": "staging",
+  "browser": "chrome",
+  
+  "selector_priority": [
+    "name",
+    "aria-label",
+    "css",
+    "id",
+    "data-testid"
+  ],
+  "avoid_selectors": [
+    "xpath"
+  ],
+  
+  "pages": [
+    {
+      "name": "LoginPage",
+      "url_pattern": "/login",
+      "element_metadata_file": "login_elements.json"
+    }
+  ],
+  
+  "owner": "QA Team"
+}

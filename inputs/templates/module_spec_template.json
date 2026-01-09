@@ -1,0 +1,47 @@
+{
+  "_comment": "TringPlay Web UI Test Module Specification",
+  "_instructions": "Fill in the values below for your test module. Remove _comment and _instructions fields when done.",
+  
+  "module_name": "authentication",
+  "app_name": "TringPlay",
+  "app_url": "https://staging.tringplay.com",
+  "description": "Authentication module tests for TringPlay OTT web application",
+  
+  "environment": "staging",
+  "browser": "chrome",
+  
+  "selector_priority": [
+    "id",
+    "data-testid",
+    "name",
+    "aria-label",
+    "css"
+  ],
+  "avoid_selectors": [
+    "xpath"
+  ],
+  
+  "pages": [
+    {
+      "name": "LoginPage",
+      "url_pattern": "/login",
+      "element_metadata_file": "login_elements.json",
+      "_description": "Login/Sign-in page"
+    },
+    {
+      "name": "SignupPage",
+      "url_pattern": "/signup",
+      "element_metadata_file": "signup_elements.json",
+      "_description": "User registration page"
+    },
+    {
+      "name": "HomePage",
+      "url_pattern": "/home",
+      "element_metadata_file": "home_page_elements.json",
+      "_description": "Main home page after login"
+    }
+  ],
+  
+  "owner": "QA Team",
+  "version": "1.0.0"
+}

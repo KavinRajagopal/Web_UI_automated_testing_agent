@@ -1,0 +1,87 @@
+{
+  "_comment": "Element metadata template - extract selectors from DevTools",
+  "_instructions": "For each element: 1) Right-click in DevTools 2) Copy selector 3) Add here with confidence score",
+  
+  "page_name": "LoginPage",
+  "page_url": "/login",
+  "description": "Login page for TringPlay",
+  "extracted_from": "DevTools inspection - [DATE]",
+  
+  "elements": [
+    {
+      "_comment": "Use the most stable selector as first option",
+      "name": "email_input",
+      "description": "Email/username input field",
+      "element_type": "input",
+      "is_required": true,
+      "wait_strategy": "visible",
+      "selectors": [
+        {
+          "_comment": "Best: Use 'name' attribute if available",
+          "type": "name",
+          "value": "email",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "_comment": "Alternative: CSS selector",
+          "type": "css",
+          "value": "input[type='email']",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ]
+    },
+    {
+      "name": "password_input",
+      "description": "Password input field",
+      "element_type": "input",
+      "is_required": true,
+      "wait_strategy": "visible",
+      "selectors": [
+        {
+          "type": "name",
+          "value": "password",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "type": "css",
+          "value": "input[type='password']",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ]
+    },
+    {
+      "name": "login_button",
+      "description": "Login/Submit button",
+      "element_type": "button",
+      "is_required": true,
+      "wait_strategy": "clickable",
+      "selectors": [
+        {
+          "type": "css",
+          "value": "button[type='submit']",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ]
+    },
+    {
+      "name": "error_message",
+      "description": "Error message display",
+      "element_type": "text",
+      "is_required": false,
+      "wait_strategy": "visible",
+      "selectors": [
+        {
+          "type": "css",
+          "value": "[role='alert']",
+          "confidence": 0.85,
+          "is_stable": true
+        }
+      ]
+    }
+  ]
+}
