@@ -5,7 +5,7 @@ from pages.productspage import ProductsPage
 
 
 class AuthFlow:
-    """Helper class for Authentication flow helpers for login/logout operations and credential management."""
+    """Helper class for Authentication flow helpers for login, logout, and credential validation scenarios."""
     
     def __init__(self, driver, base_url):
         self.driver = driver

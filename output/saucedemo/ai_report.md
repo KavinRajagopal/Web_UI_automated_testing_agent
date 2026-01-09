@@ -1,8 +1,8 @@
 # AI Test Generation Report
 
 **Module:** saucedemo
-**Generated:** 2026-01-09 05:40:20
-**Session ID:** 20260109_052724
+**Generated:** 2026-01-09 16:18:11
+**Session ID:** 20260109_160655
 
 ## Summary
 
@@ -14,12 +14,12 @@
 | Flows Generated | 2 |
 | Verification | ❌ FAILED |
 | LLM Calls | 22 |
-| Total Tokens | 99,425 |
+| Total Tokens | 84,443 |
 
 ## Recommendations
 
 1. Review and fix verification failures before running tests
-2. Code required 3 recovery attempts - review generated code quality
+2. Code required 6 recovery attempts - review generated code quality
 3. Only 10/24 test cases were generated - review planning output
 
 ## Files Generated

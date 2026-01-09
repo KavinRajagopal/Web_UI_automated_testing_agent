@@ -1,7 +1,7 @@
 {
-  "session_id": "20260109_052724",
+  "session_id": "20260109_160655",
   "module_name": "saucedemo",
-  "created_at": "2026-01-09T05:40:20.238341",
+  "created_at": "2026-01-09T16:18:11.830789",
   "files_generated": [
     "base_page.py",
     "login_page.py",
@@ -28,10 +28,10 @@
   "selector_risks": [],
   "recommendations": [
     "Review and fix verification failures before running tests",
-    "Code required 3 recovery attempts - review generated code quality",
+    "Code required 6 recovery attempts - review generated code quality",
     "Only 10/24 test cases were generated - review planning output"
   ],
   "llm_calls": 22,
-  "total_tokens": 99425,
+  "total_tokens": 84443,
   "duration_seconds": null
 }
