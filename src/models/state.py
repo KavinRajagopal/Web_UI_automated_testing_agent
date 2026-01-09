@@ -70,6 +70,19 @@ class AgentState(TypedDict, total=False):
     input_validation_warnings: List[str]
     """Any validation warnings"""
     
+    # Input generation tracking (for auto-generation)
+    inputs_generated: bool
+    """Whether inputs were auto-generated (vs pre-existing)"""
+    
+    generated_elements: bool
+    """Whether element metadata was auto-generated"""
+    
+    generated_testcases: bool
+    """Whether test cases were auto-generated"""
+    
+    needs_input_review: bool
+    """Whether generated inputs need human review"""
+    
     # =========================================================================
     # PLANNING (populated by planning node)
     # =========================================================================
@@ -180,7 +193,7 @@ def create_initial_state(
     output_path: str,
     llm_model_id: str = "us.anthropic.claude-opus-4-5-20251101-v1:0",
     llm_region: str = "us-east-2",
-    llm_profile: str = "tring-kavin",
+    llm_profile: str = "bedrock-user",
     max_recovery_attempts: int = 3
 ) -> AgentState:
     """
@@ -211,6 +224,10 @@ def create_initial_state(
         page_metadata={},
         input_validation_errors=[],
         input_validation_warnings=[],
+        inputs_generated=False,
+        generated_elements=False,
+        generated_testcases=False,
+        needs_input_review=False,
         
         # Planning (will be populated)
         generation_plan={},

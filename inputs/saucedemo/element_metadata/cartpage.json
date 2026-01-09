@@ -1,0 +1,840 @@
+{
+  "page_name": "CartPage",
+  "page_url": "https://www.saucedemo.com/inventory.html",
+  "description": "SauceDemo shopping cart page",
+  "elements": [
+    {
+      "name": "header-container",
+      "description": "Open Menu\nSwag Labs\nProducts\nName (A to Z)\nName (A to Z)\nName (Z to A)\nPrice (low to high)\nPrice (hi",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "header-container",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "header_container",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "primary-header",
+      "description": "Open Menu\nSwag Labs",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "primary-header",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "react-burger-menu-btn",
+      "description": "Open Menu",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "id",
+          "value": "react-burger-menu-btn",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "open-menu",
+      "description": "element element",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "open-menu",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "shopping-cart-link",
+      "description": "link element",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "shopping-cart-link",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "secondary-header",
+      "description": "Products\nName (A to Z)\nName (A to Z)\nName (Z to A)\nPrice (low to high)\nPrice (high to low)",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "secondary-header",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "title",
+      "description": "Products",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "title",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "active-option",
+      "description": "Name (A to Z)",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "active-option",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "product-sort-container",
+      "description": "Name (A to Z)\nName (Z to A)\nPrice (low to high)\nPrice (high to low)",
+      "element_type": "select",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "product-sort-container",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-container",
+      "description": "Sauce Labs Backpack\ncarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromis",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-container",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "inventory_container",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-list",
+      "description": "Sauce Labs Backpack\ncarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromis",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-list",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item",
+      "description": "Sauce Labs Backpack\ncarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromis",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-4-img-link",
+      "description": "link element",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-4-img-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_4_img_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-sauce-labs-backpack-img",
+      "description": "element element",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-sauce-labs-backpack-img",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-description",
+      "description": "Sauce Labs Backpack\ncarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromis",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-description",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-4-title-link",
+      "description": "Sauce Labs Backpack",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-4-title-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_4_title_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-name",
+      "description": "Sauce Labs Backpack",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-name",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-desc",
+      "description": "carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequ",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-desc",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-price",
+      "description": "$29.99",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-price",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "add-to-cart-sauce-labs-backpack",
+      "description": "Add to cart",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "add-to-cart-sauce-labs-backpack",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "add-to-cart-sauce-labs-backpack",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "add-to-cart-sauce-labs-backpack",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-0-img-link",
+      "description": "link element",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-0-img-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_0_img_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-sauce-labs-bike-light-img",
+      "description": "element element",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-sauce-labs-bike-light-img",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-0-title-link",
+      "description": "Sauce Labs Bike Light",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-0-title-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_0_title_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "add-to-cart-sauce-labs-bike-light",
+      "description": "Add to cart",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "add-to-cart-sauce-labs-bike-light",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "add-to-cart-sauce-labs-bike-light",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "add-to-cart-sauce-labs-bike-light",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-1-img-link",
+      "description": "link element",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-1-img-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_1_img_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-sauce-labs-bolt-t-shirt-img",
+      "description": "element element",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-sauce-labs-bolt-t-shirt-img",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-1-title-link",
+      "description": "Sauce Labs Bolt T-Shirt",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-1-title-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_1_title_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "add-to-cart-sauce-labs-bolt-t-shirt",
+      "description": "Add to cart",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "add-to-cart-sauce-labs-bolt-t-shirt",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "add-to-cart-sauce-labs-bolt-t-shirt",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "add-to-cart-sauce-labs-bolt-t-shirt",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-5-img-link",
+      "description": "link element",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-5-img-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_5_img_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-sauce-labs-fleece-jacket-img",
+      "description": "element element",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-sauce-labs-fleece-jacket-img",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-5-title-link",
+      "description": "Sauce Labs Fleece Jacket",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-5-title-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_5_title_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "add-to-cart-sauce-labs-fleece-jacket",
+      "description": "Add to cart",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "add-to-cart-sauce-labs-fleece-jacket",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "add-to-cart-sauce-labs-fleece-jacket",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "add-to-cart-sauce-labs-fleece-jacket",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-2-img-link",
+      "description": "link element",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-2-img-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_2_img_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-sauce-labs-onesie-img",
+      "description": "element element",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-sauce-labs-onesie-img",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-2-title-link",
+      "description": "Sauce Labs Onesie",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-2-title-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_2_title_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "add-to-cart-sauce-labs-onesie",
+      "description": "Add to cart",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "add-to-cart-sauce-labs-onesie",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "add-to-cart-sauce-labs-onesie",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "add-to-cart-sauce-labs-onesie",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-3-img-link",
+      "description": "link element",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-3-img-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_3_img_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "inventory-item-test_allthethings_-t-shirt-_red_-img",
+      "description": "element element",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "inventory-item-test.allthethings()-t-shirt-(red)-img",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "item-3-title-link",
+      "description": "Test.allTheThings() T-Shirt (Red)",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "item-3-title-link",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "item_3_title_link",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "add-to-cart-test_allthethings_-t-shirt-_red",
+      "description": "Add to cart",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "add-to-cart-test.allthethings()-t-shirt-(red)",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "add-to-cart-test.allthethings()-t-shirt-(red)",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "add-to-cart-test.allthethings()-t-shirt-(red)",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "footer",
+      "description": "Twitter\nFacebook\nLinkedIn\n\u00a9 2026 Sauce Labs. All Rights Reserved. Terms of Service | Privacy Policy",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "footer",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "social-twitter",
+      "description": "Twitter",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "social-twitter",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "social-facebook",
+      "description": "Facebook",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "social-facebook",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "social-linkedin",
+      "description": "LinkedIn",
+      "element_type": "link",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "social-linkedin",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "footer-copy",
+      "description": "\u00a9 2026 Sauce Labs. All Rights Reserved. Terms of Service | Privacy Policy",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "footer-copy",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    }
+  ],
+  "last_updated": "2026-01-09T03:38:15.932953",
+  "extracted_from": "ElementDiscoveryTool - 2026-01-09T03:38:15.932954"
+}

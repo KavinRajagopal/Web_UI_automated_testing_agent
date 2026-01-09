@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/langchain-ai/langgraph/main/libs/cli/langgraph_cli/schemas/langgraph.json",
+  "graphs": {
+    "web_ui_agent": {
+      "path": "./src/agent.py:build_agent_graph",
+      "description": "Web UI Test Generation Agent - Generates Selenium+Pytest automation code"
+    }
+  },
+  "env": ".env",
+  "dependencies": ["requirements.txt"],
+  "python_version": "3.10"
+}

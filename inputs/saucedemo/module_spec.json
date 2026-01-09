@@ -1,0 +1,55 @@
+{
+  "module_name": "saucedemo",
+  "app_name": "SauceDemo",
+  "app_url": "https://www.saucedemo.com",
+  "environment": "production",
+  "browser": "chrome",
+  "selector_priority": [
+    "data-testid",
+    "id",
+    "name",
+    "aria-label"
+  ],
+  "avoid_selectors": [
+    "css",
+    "xpath"
+  ],
+  "description": "E-commerce demo site for Selenium testing",
+  "pages": [
+    {
+      "name": "LoginPage",
+      "url_pattern": "/",
+      "element_metadata_file": "element_metadata/loginpage.json"
+    },
+    {
+      "name": "ProductsPage",
+      "url_pattern": "/inventory.html",
+      "element_metadata_file": "element_metadata/productspage.json"
+    },
+    {
+      "name": "CartPage",
+      "url_pattern": "/cart.html",
+      "element_metadata_file": "element_metadata/cartpage.json"
+    },
+    {
+      "name": "CheckoutPage",
+      "url_pattern": "/checkout-step-one.html",
+      "element_metadata_file": "element_metadata/checkoutpage.json"
+    }
+  ],
+  "test_credentials": {
+    "standard_user": {
+      "username": "standard_user",
+      "password": "secret_sauce"
+    },
+    "locked_out_user": {
+      "username": "locked_out_user",
+      "password": "secret_sauce"
+    },
+    "problem_user": {
+      "username": "problem_user",
+      "password": "secret_sauce"
+    }
+  },
+  "created_at": "2026-01-09T03:38:06.640271"
+}

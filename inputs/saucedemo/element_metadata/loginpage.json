@@ -1,0 +1,156 @@
+{
+  "page_name": "LoginPage",
+  "page_url": "https://www.saucedemo.com",
+  "description": "SauceDemo login page with username/password authentication",
+  "elements": [
+    {
+      "name": "login-container",
+      "description": "Accepted usernames are:\nstandard_user\nlocked_out_user\nproblem_user\nperformance_glitch_user\nerror_use",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "login-container",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "username",
+      "description": "Username",
+      "element_type": "input",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "username",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "user-name",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "user-name",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "password",
+      "description": "Password",
+      "element_type": "input",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "password",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "password",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "password",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "login-button",
+      "description": "button element",
+      "element_type": "button",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "login-button",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "login-button",
+          "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "name",
+          "value": "login-button",
+          "confidence": 0.9,
+          "is_stable": true
+        }
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "login-credentials-container",
+      "description": "Accepted usernames are:\nstandard_user\nlocked_out_user\nproblem_user\nperformance_glitch_user\nerror_use",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "login-credentials-container",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "login-credentials",
+      "description": "Accepted usernames are:\nstandard_user\nlocked_out_user\nproblem_user\nperformance_glitch_user\nerror_use",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "login-credentials",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "id",
+          "value": "login_credentials",
+          "confidence": 0.95,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "login-password",
+      "description": "Password for all users:\nsecret_sauce",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-testid",
+          "value": "login-password",
+          "confidence": 0.98,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    }
+  ],
+  "last_updated": "2026-01-09T03:38:07.719065",
+  "extracted_from": "ElementDiscoveryTool - 2026-01-09T03:38:07.719067"
+}

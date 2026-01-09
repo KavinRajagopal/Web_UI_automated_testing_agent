@@ -18,6 +18,8 @@ import os
 import sys
 import logging
 
+import pytest
+
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
@@ -39,24 +41,34 @@ def print_banner(text: str):
     print("=" * 60)
 
 
+@pytest.fixture(scope="module")
+def client():
+    """Pytest fixture for BedrockClient."""
+    return BedrockClient(
+        model_id="us.anthropic.claude-opus-4-5-20251101-v1:0",
+        region_name="us-east-2",
+        profile_name="bedrock-user"
+    )
+
+
 def test_bedrock_connection():
     """Test: Verify Bedrock client initializes."""
     print_banner("Test: Initialize Bedrock Client")
     
     try:
-        client = BedrockClient(
+        test_client = BedrockClient(
             model_id="us.anthropic.claude-opus-4-5-20251101-v1:0",
             region_name="us-east-2",
-            profile_name="tring-kavin"
+            profile_name="bedrock-user"
         )
         print("✓ Bedrock client initialized successfully")
-        print(f"  Model: {client.model_id}")
-        print(f"  Region: {client.region_name}")
-        print(f"  Profile: {client.profile_name}")
-        return client
+        print(f"  Model: {test_client.model_id}")
+        print(f"  Region: {test_client.region_name}")
+        print(f"  Profile: {test_client.profile_name}")
+        assert test_client is not None
     except Exception as e:
         print(f"✗ Failed to initialize Bedrock client: {e}")
-        return None
+        pytest.fail(f"Bedrock client initialization failed: {e}")
 
 
 def test_simple_chat(client: BedrockClient):
@@ -155,39 +167,45 @@ def test_usage_stats(client: BedrockClient):
 
 
 def main():
-    """Run all Bedrock client tests."""
+    """Run all Bedrock client tests (manual execution mode)."""
     print("\n" + "=" * 60)
     print("  BEDROCK CLIENT TESTS")
-    print("  TringPlay Web UI Test Generation Agent")
+    print("  Web UI Test Generation Agent")
     print("=" * 60)
     
     results = []
     
     # Test 1: Initialize client
-    client = test_bedrock_connection()
-    if client is None:
-        print("\n✗ TESTS FAILED: Could not initialize Bedrock client")
+    try:
+        bedrock_client = BedrockClient(
+            model_id="us.anthropic.claude-opus-4-5-20251101-v1:0",
+            region_name="us-east-2",
+            profile_name="bedrock-user"
+        )
+        print("✓ Bedrock client initialized successfully")
+        results.append(("Initialize Client", True))
+    except Exception as e:
+        print(f"\n✗ TESTS FAILED: Could not initialize Bedrock client: {e}")
         print("\nTroubleshooting:")
-        print("1. Check AWS profile 'tring-kavin' exists: aws configure list --profile tring-kavin")
+        print("1. Check AWS profile 'bedrock-user' exists: aws configure list --profile bedrock-user")
         print("2. Check region 'us-east-2' has Bedrock access")
         print("3. Check model access: Claude Opus 4.5 enabled in Bedrock console")
         sys.exit(1)
-    results.append(("Initialize Client", True))
     
     # Test 2: Simple chat
-    success = test_simple_chat(client)
+    success = test_simple_chat(bedrock_client)
     results.append(("Simple Chat", success))
     
     # Test 3: System prompt
-    success = test_system_prompt(client)
+    success = test_system_prompt(bedrock_client)
     results.append(("System Prompt", success))
     
     # Test 4: JSON response
-    success = test_json_response(client)
+    success = test_json_response(bedrock_client)
     results.append(("JSON Response", success))
     
     # Test 5: Usage stats
-    success = test_usage_stats(client)
+    success = test_usage_stats(bedrock_client)
     results.append(("Usage Stats", success))
     
     # Summary

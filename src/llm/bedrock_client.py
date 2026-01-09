@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict, Any, Optional
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError, BotoCoreError
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class BedrockClient:
         model_id: str = "us.anthropic.claude-opus-4-5-20251101-v1:0",
         region_name: str = "us-east-2",
         profile_name: Optional[str] = None,
-        max_tokens: int = 4096,
+        max_tokens: int = 16384,
         temperature: float = 0.7
     ):
         """
@@ -55,10 +56,17 @@ class BedrockClient:
         else:
             session = boto3.Session()
         
-        # Initialize Bedrock Runtime client
+        # Initialize Bedrock Runtime client with extended timeout
+        # Claude Opus with high token counts can take several minutes
+        config = Config(
+            read_timeout=600,  # 10 minutes
+            connect_timeout=10,
+            retries={'max_attempts': 3}
+        )
         self.client = session.client(
             service_name='bedrock-runtime',
-            region_name=region_name
+            region_name=region_name,
+            config=config
         )
         
         logger.info(

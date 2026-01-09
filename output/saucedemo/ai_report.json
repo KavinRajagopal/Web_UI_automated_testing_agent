@@ -1,0 +1,37 @@
+{
+  "session_id": "20260109_052724",
+  "module_name": "saucedemo",
+  "created_at": "2026-01-09T05:40:20.238341",
+  "files_generated": [
+    "base_page.py",
+    "login_page.py",
+    "products_page.py",
+    "cart_page.py",
+    "auth_flow.py",
+    "products_flow.py",
+    "test_saucedemo.py",
+    "conftest.py",
+    "pytest.ini",
+    "__init__.py",
+    "__init__.py",
+    "__init__.py"
+  ],
+  "tests_generated": 10,
+  "pages_generated": 3,
+  "flows_generated": 2,
+  "verification_passed": false,
+  "checkpoints_summary": {
+    "A": "passed",
+    "B": "passed",
+    "C": "passed"
+  },
+  "selector_risks": [],
+  "recommendations": [
+    "Review and fix verification failures before running tests",
+    "Code required 3 recovery attempts - review generated code quality",
+    "Only 10/24 test cases were generated - review planning output"
+  ],
+  "llm_calls": 22,
+  "total_tokens": 99425,
+  "duration_seconds": null
+}

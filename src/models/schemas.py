@@ -345,7 +345,7 @@ class GenerationPlan(BaseModel):
 
 class CheckpointResult(BaseModel):
     """Result of a single verification checkpoint."""
-    checkpoint_name: str = Field(..., description="A, B, or C")
+    checkpoint_name: str = Field(..., description="A, B, C, or D")
     checkpoint_description: str = Field(..., description="What was checked")
     
     status: CheckpointStatus = Field(..., description="passed, failed, skipped")
@@ -358,11 +358,17 @@ class CheckpointResult(BaseModel):
     # Error details for failed files
     errors: Dict[str, str] = Field(
         default_factory=dict,
-        description="Map of file -> error message"
+        description="Map of file -> error message (or list of errors as string)"
     )
     
     # Timing
     duration_seconds: Optional[float] = None
+    
+    # Metadata (for checkpoint D: test counts)
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional checkpoint-specific data"
+    )
 
 
 class VerificationResults(BaseModel):
@@ -370,7 +376,8 @@ class VerificationResults(BaseModel):
     
     checkpoint_a: Optional[CheckpointResult] = Field(None, description="Syntax check")
     checkpoint_b: Optional[CheckpointResult] = Field(None, description="Import check")
-    checkpoint_c: Optional[CheckpointResult] = Field(None, description="Mock execution")
+    checkpoint_c: Optional[CheckpointResult] = Field(None, description="Pytest collection")
+    checkpoint_d: Optional[CheckpointResult] = Field(None, description="Test execution")
     
     # Overall
     all_passed: bool = Field(default=False)
@@ -381,7 +388,7 @@ class VerificationResults(BaseModel):
     
     def calculate_all_passed(self) -> bool:
         """Check if all checkpoints passed."""
-        checkpoints = [self.checkpoint_a, self.checkpoint_b, self.checkpoint_c]
+        checkpoints = [self.checkpoint_a, self.checkpoint_b, self.checkpoint_c, self.checkpoint_d]
         for cp in checkpoints:
             if cp and cp.status == CheckpointStatus.FAILED:
                 return False
