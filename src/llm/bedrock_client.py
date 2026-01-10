@@ -1,11 +1,20 @@
 """AWS Bedrock client for Claude Opus 4.5 using Converse API."""
 import json
 import logging
+import os
 from typing import List, Dict, Any, Optional
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError, BotoCoreError
+
+# LangSmith integration for token tracking
+try:
+    from langsmith import traceable
+    LANGSMITH_AVAILABLE = True
+except ImportError:
+    LANGSMITH_AVAILABLE = False
+    traceable = lambda **kwargs: lambda f: f  # No-op decorator
 
 logger = logging.getLogger(__name__)
 
@@ -132,13 +141,49 @@ class BedrockClient:
             
             # Track usage
             self.call_count += 1
-            if 'usage' in response:
-                self.total_input_tokens += response['usage'].get('inputTokens', 0)
-                self.total_output_tokens += response['usage'].get('outputTokens', 0)
+            usage = response.get('usage', {})
+            input_tokens = usage.get('inputTokens', 0)
+            output_tokens = usage.get('outputTokens', 0)
+            
+            if input_tokens > 0 or output_tokens > 0:
+                self.total_input_tokens += input_tokens
+                self.total_output_tokens += output_tokens
+            
+            # Log to LangSmith if available (for token visibility in traces)
+            # LangSmith automatically tracks LangGraph nodes, but we need to manually log token usage
+            if LANGSMITH_AVAILABLE and os.environ.get("LANGCHAIN_TRACING_V2") == "true":
+                try:
+                    from langsmith import Client
+                    from langsmith.run_helpers import get_current_run_tree
+                    
+                    # Get current run tree (LangGraph creates runs automatically)
+                    run_tree = get_current_run_tree()
+                    if run_tree and hasattr(run_tree, 'id'):
+                        client = Client()
+                        # Update run with token usage as extra metadata
+                        # This will show up in LangSmith UI under the run's metadata
+                        client.update_run(
+                            run_id=run_tree.id,
+                            extra={
+                                "llm_usage": {
+                                    "input_tokens": input_tokens,
+                                    "output_tokens": output_tokens,
+                                    "total_tokens": input_tokens + output_tokens,
+                                    "model": self.model_id
+                                },
+                                "input_tokens": input_tokens,
+                                "output_tokens": output_tokens,
+                                "total_tokens": input_tokens + output_tokens
+                            }
+                        )
+                        logger.debug(f"Logged {input_tokens + output_tokens} tokens to LangSmith run {run_tree.id}")
+                except Exception as e:
+                    # Silently fail - token tracking is optional
+                    logger.debug(f"Could not log tokens to LangSmith (this is OK): {e}")
             
             logger.info(
                 f"Converse response: stop_reason={response.get('stopReason')}, "
-                f"tokens={response.get('usage', {})}"
+                f"tokens={usage}"
             )
             
             return response

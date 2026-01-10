@@ -1050,13 +1050,7 @@ def pytest_runtest_makereport(item, call):
         state["recovery_stage"] = 3
         return state
     
-        logger.info("✓ Stage 3 verification passed - all code generated successfully")
-    else:
-        logger.info("Stage 3 already complete - skipping")
-        # Get existing stage3 results
-        stage3_results_dict = state.get("incremental_verification_stage3", {})
-        from ..models.schemas import VerificationResults
-        stage3_results = VerificationResults(**stage3_results_dict)
+    logger.info("✓ Stage 3 verification passed - all code generated successfully")
     
     # Update LLM usage
     usage = llm.get_usage_stats()

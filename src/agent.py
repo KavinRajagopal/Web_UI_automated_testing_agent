@@ -21,6 +21,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from .models.state import AgentState, create_initial_state
 from .nodes.onboarding import onboarding_node
 from .nodes.human_gates import (
+    human_gate_test_cases,
     human_gate_inputs,
     human_gate_plan,
     human_gate_final,
@@ -94,6 +95,23 @@ def route_after_plan_review(state: AgentState) -> str:
     else:
         logger.info("Plan not approved after max revisions - ending")
         return END
+
+
+def route_after_generation(state: AgentState) -> str:
+    """Determine next node after generation."""
+    # If generation detected errors during incremental verification, route directly to recovery
+    if state.get("needs_recovery", False):
+        recovery_stage = state.get("recovery_stage")
+        if recovery_stage:
+            logger.info(f"Generation detected Stage {recovery_stage} errors - routing directly to recovery")
+            return "recovery"
+    
+    # If generation is complete, go to verification for final check
+    if state.get("generation_complete", False):
+        return "verification"
+    
+    # Default: go to verification (for final check after all stages)
+    return "verification"
 
 
 def route_after_verification(state: AgentState) -> str:
@@ -226,7 +244,15 @@ def build_agent_graph(auto_approve: bool = False, checkpointer=None) -> StateGra
         }
     )
     
-    graph.add_edge("generation", "verification")
+    # Make generation routing conditional - can go directly to recovery if errors detected
+    graph.add_conditional_edges(
+        "generation",
+        route_after_generation,
+        {
+            "recovery": "recovery",
+            "verification": "verification"
+        }
+    )
     
     graph.add_conditional_edges(
         "verification",
