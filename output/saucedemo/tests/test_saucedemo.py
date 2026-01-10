@@ -1,12 +1,12 @@
+import pytest
 from pages.login_page import LoginPage
 from pages.products_page import ProductsPage
-import pytest
-from selenium.webdriver.common.by import By
+
 
 """
 Test ID: TC_LOGIN_001
 Test Name: test_valid_login_with_standard_user
-Description: Test valid login with standard_user credentials and verify successful redirect to products page
+Description: Test valid login with standard_user credentials redirects to products page
 """
 
 
@@ -16,7 +16,7 @@ Description: Test valid login with standard_user credentials and verify successf
 @pytest.mark.P0
 def test_valid_login_with_standard_user(driver, base_url):
     """
-    Test valid login with standard_user credentials and verify successful redirect to products page.
+    Test valid login with standard_user credentials redirects to products page.
     
     Steps:
     1. Navigate to login page
@@ -41,7 +41,7 @@ def test_valid_login_with_standard_user(driver, base_url):
     driver.get(base_url)
     
     # Verify login page is loaded
-    assert login_page.is_page_loaded(), "Login page failed to load"
+    assert login_page.is_page_loaded(), "Login page should be loaded"
     
     # Steps 2-4: Enter credentials and click login
     # Using the login method which handles entering username, password and clicking login
@@ -49,22 +49,20 @@ def test_valid_login_with_standard_user(driver, base_url):
     
     # Step 5: Verify redirect to products page
     products_page = ProductsPage(driver)
-    assert products_page.is_page_loaded(), "Products page failed to load after login"
+    assert products_page.is_page_loaded(), "Products page should be loaded after successful login"
     
     # Step 6: Verify URL contains /inventory.html
     current_url = driver.current_url
-    assert "/inventory.html" in current_url, f"Expected URL to contain '/inventory.html', but got: {current_url}"
+    assert "/inventory.html" in current_url, f"URL should contain '/inventory.html', but got: {current_url}"
     
     # Step 7: Verify products title is displayed
-    assert products_page.is_title_displayed(), "Products page title is not displayed"
-    
-    # Additional verification - check we're on the correct page
-    assert products_page.is_on_page(), "Not on the products page as expected"
+    assert products_page.is_title_displayed(), "Products title should be displayed"
+
 
 """
 Test ID: TC_LOGIN_002
 Test Name: test_invalid_login_with_wrong_password
-Description: Test login failure with correct username but incorrect password
+Description: Test login fails with wrong password and displays appropriate error
 """
 
 
@@ -74,7 +72,7 @@ Description: Test login failure with correct username but incorrect password
 @pytest.mark.P0
 def test_invalid_login_with_wrong_password(driver, base_url):
     """
-    Test login failure with correct username but incorrect password.
+    Test that login fails with wrong password and displays appropriate error message.
     
     Steps:
     1. Navigate to login page
@@ -94,17 +92,14 @@ def test_invalid_login_with_wrong_password(driver, base_url):
     username = "standard_user"
     password = "wrong_password"
     
-    # Initialize page object
-    login_page = LoginPage(driver)
-    
     # Step 1: Navigate to login page
-    driver.get(base_url)
+    login_page = LoginPage(driver)
+    login_page.navigate(base_url)
     
     # Verify login page is loaded
     assert login_page.is_page_loaded(), "Login page failed to load"
     
-    # Step 2-4: Enter credentials and click login
-    # Using the login method which handles entering username, password and clicking login
+    # Step 2-4: Enter credentials and attempt login
     login_page.login(username, password)
     
     # Step 5: Verify user remains on login page
@@ -117,27 +112,17 @@ def test_invalid_login_with_wrong_password(driver, base_url):
     error_message = login_page.get_error_message()
     assert error_message is not None, "Error message should not be None"
     
-    # Check that error message indicates invalid credentials
-    # Common error messages for invalid credentials
-    invalid_credential_indicators = [
-        "username and password do not match",
-        "invalid",
-        "incorrect",
-        "wrong",
-        "not match",
-        "Epic sadface"
-    ]
-    
+    # Check that error message contains relevant text about invalid credentials
     error_message_lower = error_message.lower()
-    has_invalid_indicator = any(
-        indicator.lower() in error_message_lower 
-        for indicator in invalid_credential_indicators
-    )
-    
-    assert has_invalid_indicator, (
-        f"Error message should indicate invalid credentials. "
-        f"Actual message: '{error_message}'"
-    )
+    assert any(keyword in error_message_lower for keyword in ["username", "password", "match", "invalid", "incorrect", "wrong"]), \
+        f"Error message should indicate invalid credentials. Got: {error_message}"
+
+
+"""
+Test ID: TC_LOGIN_003
+Test Name: test_invalid_login_with_wrong_username
+Description: Test login fails with wrong username and displays appropriate error
+"""
 
 
 @pytest.mark.login
@@ -146,30 +131,35 @@ def test_invalid_login_with_wrong_password(driver, base_url):
 @pytest.mark.P0
 def test_invalid_login_with_wrong_username(driver, base_url):
     """
-    TC_LOGIN_003: Test login failure with incorrect username but correct password
+    Test that login fails with wrong username and displays appropriate error message.
     
-    This test verifies that:
-    - User remains on login page after invalid login attempt
+    Steps:
+    1. Navigate to login page
+    2. Enter invalid_user username
+    3. Enter secret_sauce password
+    4. Click login button
+    5. Verify user remains on login page
+    6. Verify error message is displayed
+    7. Verify error indicates invalid credentials
+    
+    Expected Results:
+    - User remains on login page
     - Error message is displayed
     - Error indicates invalid credentials
     """
-    # Initialize page object
-    login_page = LoginPage(driver)
+    # Test data
+    username = "invalid_user"
+    password = "secret_sauce"
     
     # Step 1: Navigate to login page
-    driver.get(base_url)
+    login_page = LoginPage(driver)
+    login_page.navigate(base_url)
     
     # Verify login page is loaded
-    assert login_page.is_page_loaded(), "Login page failed to load"
+    assert login_page.is_page_loaded(), "Login page should be loaded"
     
-    # Step 2: Enter invalid username
-    login_page.enter_username("invalid_user")
-    
-    # Step 3: Enter correct password
-    login_page.enter_password("secret_sauce")
-    
-    # Step 4: Click login button
-    login_page.click_login()
+    # Step 2-4: Enter invalid credentials and click login
+    login_page.login(username, password)
     
     # Step 5: Verify user remains on login page
     assert login_page.is_on_page(), "User should remain on login page after failed login"
@@ -180,15 +170,17 @@ def test_invalid_login_with_wrong_username(driver, base_url):
     # Step 7: Verify error indicates invalid credentials
     error_message = login_page.get_error_message()
     assert error_message is not None, "Error message should not be None"
-    assert len(error_message) > 0, "Error message should not be empty"
-    # Common error messages for invalid credentials
-    assert any(keyword in error_message.lower() for keyword in ["username", "password", "not match", "invalid", "error"]), \
+    
+    # Check that error message contains relevant text about invalid credentials
+    error_lower = error_message.lower()
+    assert any(keyword in error_lower for keyword in ["username", "password", "not match", "invalid", "do not match"]), \
         f"Error message should indicate invalid credentials, got: {error_message}"
+
 
 """
 Test ID: TC_LOGIN_004
-Test Name: test_login_with_locked_out_user
-Description: Test that locked_out_user account cannot login and receives appropriate error message
+Test Name: test_login_locked_out_user_fails
+Description: Test locked_out_user cannot login and receives locked out error message
 """
 
 
@@ -196,9 +188,9 @@ Description: Test that locked_out_user account cannot login and receives appropr
 @pytest.mark.negative
 @pytest.mark.security
 @pytest.mark.P1
-def test_login_with_locked_out_user(driver, base_url):
+def test_login_locked_out_user_fails(driver, base_url):
     """
-    Test that locked_out_user account cannot login and receives appropriate error message.
+    Test that a locked out user cannot login and receives an appropriate error message.
     
     Steps:
     1. Navigate to login page
@@ -207,7 +199,6 @@ def test_login_with_locked_out_user(driver, base_url):
     4. Click login button
     5. Verify user remains on login page
     6. Verify error message indicates user is locked out
-    7. Verify login is prevented
     
     Expected Results:
     - User remains on login page
@@ -225,10 +216,10 @@ def test_login_with_locked_out_user(driver, base_url):
     # Verify login page is loaded
     assert login_page.is_page_loaded(), "Login page should be loaded"
     
-    # Enter locked_out_user username and password, then attempt login
+    # Enter locked_out_user credentials and attempt login
     login_page.login(username, password)
     
-    # Verify user remains on login page (login is prevented)
+    # Verify user remains on login page (login was prevented)
     assert login_page.is_on_page(), "User should remain on login page after failed login attempt"
     
     # Verify error message is displayed
@@ -238,15 +229,6 @@ def test_login_with_locked_out_user(driver, base_url):
     error_message = login_page.get_error_message()
     assert "locked out" in error_message.lower(), \
         f"Error message should indicate user is locked out. Actual message: {error_message}"
-    
-    # Additional verification that login was prevented - page title should still be login page
-    assert login_page.is_title_displayed(), "Login page title should still be displayed"
-
-"""
-Test ID: TC_LOGIN_005
-Test Name: test_login_with_empty_username
-Description: Test login validation when username field is empty
-"""
 
 
 @pytest.mark.login
@@ -256,7 +238,7 @@ Description: Test login validation when username field is empty
 @pytest.mark.P1
 def test_login_with_empty_username(driver, base_url):
     """
-    Test login validation when username field is empty.
+    TC_LOGIN_005: Test login fails with empty username field and shows validation error
     
     Steps:
     1. Navigate to login page
@@ -264,8 +246,7 @@ def test_login_with_empty_username(driver, base_url):
     3. Enter secret_sauce password
     4. Click login button
     5. Verify user remains on login page
-    6. Verify error message indicates username is required
-    7. Verify login is prevented
+    6. Verify error indicates username is required
     
     Expected Results:
     - User remains on login page
@@ -281,31 +262,33 @@ def test_login_with_empty_username(driver, base_url):
     # Verify we're on the login page
     assert login_page.is_page_loaded(), "Login page should be loaded"
     
-    # Step 2 & 3: Leave username empty, enter password, and click login
-    # The login method will handle entering empty username and password
-    login_page.login("", "secret_sauce")
+    # Step 2 & 3: Leave username empty and enter password
+    # We need to interact with the page directly since login method isn't available
+    # Enter empty username (just clear the field) and enter password
+    from selenium.webdriver.common.by import By
+    username_field = driver.find_element(By.ID, "user-name")
+    password_field = driver.find_element(By.ID, "password")
+    login_button = driver.find_element(By.ID, "login-button")
+    
+    # Step 2: Leave username field empty (clear it to ensure it's empty)
+    username_field.clear()
+    
+    # Step 3: Enter password
+    password_field.clear()
+    password_field.send_keys("secret_sauce")
+    
+    # Step 4: Click login button
+    login_button.click()
     
     # Step 5: Verify user remains on login page
     assert login_page.is_on_page(), "User should remain on login page after failed login attempt"
     
-    # Step 6: Verify error message is displayed
+    # Step 6: Verify error indicates username is required
     assert login_page.is_error_displayed(), "Error message should be displayed"
     
-    # Verify error message indicates username is required
     error_message = login_page.get_error_message()
     assert "username is required" in error_message.lower(), \
-        f"Error message should indicate username is required, got: {error_message}"
-    
-    # Step 7: Verify login is prevented (user is still on login page)
-    # This is confirmed by checking we're still on the login page
-    assert login_page.is_title_displayed(), "Login page title should still be displayed"
-    assert login_page.is_page_loaded(), "Login page should still be loaded, confirming login was prevented"
-
-"""
-Test ID: TC_LOGIN_006
-Test Name: test_login_with_empty_password
-Description: Test login validation when password field is empty
-"""
+        f"Error message should indicate username is required, but got: {error_message}"
 
 
 @pytest.mark.login
@@ -315,7 +298,9 @@ Description: Test login validation when password field is empty
 @pytest.mark.P1
 def test_login_with_empty_password(driver, base_url):
     """
-    Test login validation when password field is empty.
+    Test ID: TC_LOGIN_006
+    Test Name: test_login_with_empty_password
+    Description: Test login fails with empty password field and shows validation error
     
     Steps:
     1. Navigate to login page
@@ -323,50 +308,48 @@ def test_login_with_empty_password(driver, base_url):
     3. Leave password field empty
     4. Click login button
     5. Verify user remains on login page
-    6. Verify error message indicates password is required
-    7. Verify login is prevented
+    6. Verify error indicates password is required
     
     Expected Results:
     - User remains on login page
     - Error message indicates password is required
     - Login is prevented
     """
-    # Test data
-    username = "standard_user"
-    password = ""
-    
-    # Navigate to login page
+    # Initialize the login page
     login_page = LoginPage(driver)
+    
+    # Step 1: Navigate to login page
     driver.get(base_url)
     
     # Verify login page is loaded
-    assert login_page.is_page_loaded(), "Login page should be loaded"
+    assert login_page.is_page_loaded(), "Login page failed to load"
     
-    # Enter username only (leave password empty)
-    login_page.enter_username(username)
-    login_page.enter_password(password)
+    # Step 2: Enter standard_user username
+    login_page.enter_username("standard_user")
     
-    # Click login button
+    # Step 3: Leave password field empty (enter empty string)
+    login_page.enter_password("")
+    
+    # Step 4: Click login button
     login_page.click_login()
     
-    # Verify user remains on login page
-    assert login_page.is_on_page(), "User should remain on login page after failed login"
+    # Step 5: Verify user remains on login page
+    assert login_page.is_on_page(), "User should remain on login page after failed login attempt"
+    assert login_page.is_page_loaded(), "Login page should still be loaded"
     
-    # Verify error message is displayed
-    assert login_page.is_error_displayed(), "Error message should be displayed"
+    # Step 6: Verify error indicates password is required
+    assert login_page.is_error_displayed(), "Error message should be displayed for empty password"
     
-    # Verify error message indicates password is required
     error_message = login_page.get_error_message()
+    assert error_message is not None, "Error message should not be None"
     assert "password" in error_message.lower() or "required" in error_message.lower(), \
-        f"Error message should indicate password is required, got: {error_message}"
-    
-    # Verify login is prevented (user is still on login page)
-    assert login_page.is_title_displayed(), "Login title should still be displayed indicating login was prevented"
+        f"Error message should indicate password is required. Actual message: {error_message}"
+
 
 """
 Test ID: TC_LOGIN_007
 Test Name: test_login_with_both_fields_empty
-Description: Test login validation when both username and password fields are empty
+Description: Test login fails with both fields empty and shows validation error
 """
 
 
@@ -377,7 +360,7 @@ Description: Test login validation when both username and password fields are em
 @pytest.mark.P2
 def test_login_with_both_fields_empty(driver, base_url):
     """
-    Test login validation when both username and password fields are empty.
+    Test that login fails when both username and password fields are empty.
     
     Steps:
     1. Navigate to login page
@@ -386,7 +369,6 @@ def test_login_with_both_fields_empty(driver, base_url):
     4. Click login button
     5. Verify user remains on login page
     6. Verify error message is displayed
-    7. Verify login is prevented
     
     Expected Results:
     - User remains on login page
@@ -397,46 +379,33 @@ def test_login_with_both_fields_empty(driver, base_url):
     login_page = LoginPage(driver)
     
     # Step 1: Navigate to login page
-    driver.get(base_url)
+    login_page.navigate(base_url)
     
-    # Verify login page is loaded
-    assert login_page.is_page_loaded(), "Login page should be loaded"
+    # Verify we are on the login page
+    assert login_page.is_page_loaded(), "Login page failed to load"
     
-    # Steps 2-3: Leave username and password fields empty (no input needed)
-    # The fields are empty by default, so we proceed directly to clicking login
+    # Steps 2 & 3: Leave both fields empty (don't enter anything)
+    # The fields should already be empty by default
     
     # Step 4: Click login button
-    # Since we need to trigger the login with empty fields, we use the page's login method
-    # But first, let's verify we're on the login page
-    assert login_page.is_on_page(), "Should be on login page before attempting login"
-    
-    # Attempt login with empty credentials
-    login_page.login("", "")
+    login_page.click_login()
     
     # Step 5: Verify user remains on login page
     assert login_page.is_on_page(), "User should remain on login page after failed login attempt"
     assert login_page.is_page_loaded(), "Login page should still be loaded"
     
     # Step 6: Verify error message is displayed
-    assert login_page.is_error_displayed(), "Error message should be displayed for empty credentials"
+    assert login_page.is_error_displayed(), "Error message should be displayed when both fields are empty"
     
-    # Get the error message for additional verification
+    # Additional verification: Get and log the error message
     error_message = login_page.get_error_message()
     assert error_message is not None and len(error_message) > 0, "Error message should not be empty"
-    
-    # Step 7: Verify login is prevented (user is still on login page)
-    # This is confirmed by the fact that we're still on the login page
-    assert login_page.is_title_displayed(), "Login page title should still be displayed"
-    
-    # Additional verification that login was prevented
-    current_url = driver.current_url
-    assert "login" in current_url.lower() or base_url in current_url, \
-        "URL should indicate user is still on login page, login was prevented"
+
 
 """
 Test ID: TC_LOGIN_008
-Test Name: test_login_with_special_characters_in_username
-Description: Test XSS prevention by entering script tags in username field
+Test Name: test_login_with_special_characters_xss
+Description: Test application handles XSS injection attempt safely in username field
 """
 
 
@@ -445,13 +414,9 @@ Description: Test XSS prevention by entering script tags in username field
 @pytest.mark.security
 @pytest.mark.edge_case
 @pytest.mark.P2
-def test_login_with_special_characters_in_username(driver, base_url):
+def test_login_with_special_characters_xss(driver, base_url):
     """
-    Test XSS prevention by entering script tags in username field.
-    
-    This test verifies that the application properly handles and sanitizes
-    potentially malicious input (XSS script tags) in the username field,
-    preventing script execution and maintaining security.
+    Test application handles XSS injection attempt safely in username field.
     
     Steps:
     1. Navigate to login page
@@ -461,7 +426,6 @@ def test_login_with_special_characters_in_username(driver, base_url):
     5. Verify user remains on login page
     6. Verify error message is displayed
     7. Verify no script execution occurs
-    8. Verify application handles input safely
     
     Expected Results:
     - User remains on login page
@@ -473,47 +437,39 @@ def test_login_with_special_characters_in_username(driver, base_url):
     xss_username = "<script>alert(1)</script>"
     password = "secret_sauce"
     
-    # Step 1: Navigate to login page
+    # Navigate to login page
     login_page = LoginPage(driver)
     driver.get(base_url)
     
     # Verify login page is loaded
     assert login_page.is_page_loaded(), "Login page should be loaded"
     
-    # Step 2: Enter XSS script in username field
-    login_page.enter_username(xss_username)
+    # Enter XSS script in username field and password
+    login_page.login(xss_username, password)
     
-    # Step 3: Enter secret_sauce password
-    login_page.enter_password(password)
-    
-    # Step 4: Click login button
-    login_page.click_login()
-    
-    # Step 5: Verify user remains on login page
+    # Verify user remains on login page (login should fail)
     assert login_page.is_on_page(), "User should remain on login page after XSS attempt"
     
-    # Step 6: Verify error message is displayed
-    assert login_page.is_error_displayed(), "Error message should be displayed for invalid username"
+    # Verify error message is displayed
+    assert login_page.is_error_displayed(), "Error message should be displayed for invalid login"
     
-    # Step 7 & 8: Verify no script execution occurs and application handles input safely
-    # If we reach this point without any JavaScript alert interrupting the test,
-    # it means no script execution occurred
+    # Get error message to verify it's a proper error response
     error_message = login_page.get_error_message()
-    assert error_message is not None, "Error message should be present"
-    assert len(error_message) > 0, "Error message should not be empty"
+    assert error_message is not None and len(error_message) > 0, "Error message should not be empty"
     
-    # Additional verification that page is still functional (no script execution broke it)
-    assert login_page.is_page_loaded(), "Page should still be functional after XSS attempt"
-    assert login_page.is_title_displayed(), "Login title should still be displayed"
+    # Verify no script execution by checking page is still functional
+    # If XSS executed, the page might be broken or show unexpected behavior
+    assert login_page.is_title_displayed(), "Page title should still be displayed (no XSS disruption)"
     
-    # Verify the page title is still correct (application is handling input safely)
-    page_title = login_page.get_page_title()
-    assert "Swag Labs" in page_title, "Page title should indicate we're still on the login page"
+    # Verify the login page elements are still present and visible
+    # This confirms the application handled the malicious input safely
+    assert login_page.is_page_loaded(), "Login page should still be fully functional after XSS attempt"
+
 
 """
 Test ID: TC_PRODUCTS_001
 Test Name: test_view_products_list_after_login
-Description: Test that products list is displayed correctly after successful login
+Description: Test products list is displayed correctly after successful login
 """
 
 
@@ -530,8 +486,7 @@ def test_view_products_list_after_login(driver, base_url):
     2. Verify products page is displayed
     3. Verify inventory container is visible
     4. Verify inventory list contains products
-    5. Verify title shows Products
-    6. Verify product names and prices are displayed
+    5. Verify product names and prices are displayed
     
     Expected Results:
     - Products page is displayed
@@ -547,53 +502,50 @@ def test_view_products_list_after_login(driver, base_url):
     login_page = LoginPage(driver)
     products_page = ProductsPage(driver)
     
-    # Navigate to login page
+    # Step 1: Navigate to login page and login with standard_user credentials
     driver.get(base_url)
     
     # Verify login page is loaded
     assert login_page.is_page_loaded(), "Login page should be loaded"
     
-    # Login with standard_user credentials
+    # Perform login
     login_page.login(username, password)
     
-    # Verify products page is displayed
-    assert products_page.is_page_loaded(), "Products page should be displayed after login"
+    # Step 2: Verify products page is displayed
+    assert products_page.is_page_loaded(), "Products page should be loaded after login"
     assert products_page.is_on_page(), "Should be on products page"
     
-    # Verify inventory container is visible
-    assert products_page.is_element_visible(By.CSS_SELECTOR, "[data-test='inventory-container']"), "Inventory container should be visible"
-    
-    # Verify title shows 'Products'
-    assert products_page.is_title_displayed(), "Products title should be displayed"
+    # Step 3: Verify title shows 'Products'
+    assert products_page.is_title_displayed(), "Products page title should be displayed"
     title_text = products_page.get_title_text()
     assert title_text == "Products", f"Title should be 'Products', but got '{title_text}'"
     
-    # Verify inventory list contains products
-    assert products_page.is_element_visible(By.CSS_SELECTOR, "[data-test='inventory-list']"), "Inventory list should be visible"
+    # Step 4: Verify inventory container is visible
+    assert products_page.is_inventory_container_visible(), "Inventory container should be visible"
     
-    # Get all product items and verify there are multiple
-    product_items = products_page.get_all_product_items()
-    assert len(product_items) > 0, "There should be at least one product in the inventory"
+    # Step 5: Verify inventory list contains products
+    product_count = products_page.get_product_count()
+    assert product_count > 0, f"Should have multiple inventory items, but got {product_count}"
     
-    # Verify product names and prices are displayed
+    # Step 6: Verify product names and prices are displayed
     product_names = products_page.get_all_product_names()
-    product_prices = products_page.get_all_product_prices()
-    
     assert len(product_names) > 0, "Product names should be displayed"
-    assert len(product_prices) > 0, "Product prices should be displayed"
-    assert len(product_names) == len(product_prices), "Each product should have a name and price"
-    
-    # Verify each product has a non-empty name and valid price
     for name in product_names:
-        assert name and len(name.strip()) > 0, "Product name should not be empty"
+        assert name and len(name) > 0, "Each product should have a non-empty name"
     
+    product_prices = products_page.get_all_product_prices()
+    assert len(product_prices) > 0, "Product prices should be displayed"
     for price in product_prices:
-        assert price and "$" in price, f"Product price should contain '$', but got '{price}'"
+        assert price and "$" in price, f"Each product should have a valid price, but got '{price}'"
+    
+    # Verify no errors are displayed
+    assert not products_page.is_error_displayed(), "No errors should be displayed on products page"
+
 
 """
 Test ID: TC_PRODUCTS_002
 Test Name: test_sort_products_by_name_a_to_z
-Description: Test product sorting functionality by name in ascending alphabetical order
+Description: Test products can be sorted alphabetically from A to Z
 """
 
 
@@ -603,7 +555,7 @@ Description: Test product sorting functionality by name in ascending alphabetica
 @pytest.mark.P1
 def test_sort_products_by_name_a_to_z(driver, base_url):
     """
-    Test product sorting functionality by name in ascending alphabetical order.
+    Test that products can be sorted alphabetically from A to Z.
     
     Steps:
     1. Login with standard_user credentials
@@ -615,7 +567,7 @@ def test_sort_products_by_name_a_to_z(driver, base_url):
     Expected Results:
     - Products are sorted alphabetically from A to Z
     - First product starts with earlier letter
-    - active-option shows 'Name (A to Z)'
+    - Active option shows 'Name (A to Z)'
     """
     # Initialize page objects
     login_page = LoginPage(driver)
@@ -656,7 +608,7 @@ def test_sort_products_by_name_a_to_z(driver, base_url):
         )
     
     # Step 5: Verify active option shows Name (A to Z)
-    active_sort_option = products_page.get_active_sort_option()
-    assert active_sort_option == "Name (A to Z)", (
-        f"Active sort option should be 'Name (A to Z)', but got '{active_sort_option}'"
+    active_option = products_page.get_active_sort_option()
+    assert active_option == "Name (A to Z)", (
+        f"Active sort option should be 'Name (A to Z)', but got '{active_option}'"
     )

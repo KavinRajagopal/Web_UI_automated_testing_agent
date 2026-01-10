@@ -407,6 +407,117 @@ def human_gate_final(state: AgentState) -> AgentState:
     return state
 
 
+def human_gate_test_cases(state: AgentState) -> AgentState:
+    """
+    Human gate for reviewing test case analysis (duplicates, suggestions).
+    
+    Allows human to:
+    - Review duplicate test cases
+    - Approve/reject suggested test cases
+    - Approve test case modifications
+    """
+    logger.info("=" * 60)
+    logger.info("HUMAN GATE: Test Case Analysis Review")
+    logger.info("=" * 60)
+    
+    state["current_node"] = "human_gate_test_cases"
+    state["node_history"] = state.get("node_history", []) + ["human_gate_test_cases"]
+    
+    console.print("\n" + "=" * 80)
+    console.print(Panel.fit("[bold cyan]TEST CASE ANALYSIS REVIEW[/bold cyan]", border_style="cyan"))
+    console.print("=" * 80 + "\n")
+    
+    analysis = state.get("test_case_analysis", {})
+    
+    if not analysis:
+        console.print("[yellow]No test case analysis available[/yellow]")
+        state["test_case_modifications_approved"] = False
+        return state
+    
+    # Display duplicates
+    duplicates = analysis.get("duplicates", [])
+    if duplicates:
+        console.print(f"[bold yellow]Found {len(duplicates)} Duplicate Test Cases[/bold yellow]\n")
+        
+        table = Table(title="Duplicate Test Cases")
+        table.add_column("Test ID", style="cyan")
+        table.add_column("Duplicates", style="yellow")
+        table.add_column("Similarity", style="green")
+        table.add_column("Reason", style="white", width=40)
+        table.add_column("Recommendation", style="magenta")
+        
+        for dup in duplicates[:10]:
+            table.add_row(
+                dup.get("test_id", "N/A"),
+                dup.get("duplicate_of", "N/A"),
+                f"{dup.get('similarity_score', 0):.0%}",
+                dup.get("reason", "N/A")[:40],
+                dup.get("recommendation", "N/A")
+            )
+        
+        if len(duplicates) > 10:
+            table.add_row("...", f"({len(duplicates) - 10} more)", "", "", "")
+        
+        console.print(table)
+        console.print("\n[yellow]Note: These are SUGGESTIONS. You can approve modifications to remove/merge duplicates.[/yellow]\n")
+    
+    # Display suggested tests
+    suggestions = analysis.get("suggested_tests", [])
+    if suggestions:
+        console.print(f"[bold green]Suggested {len(suggestions)} Additional Test Cases[/bold green]\n")
+        
+        table = Table(title="Suggested Test Cases")
+        table.add_column("Test ID", style="cyan")
+        table.add_column("Name", style="white", width=40)
+        table.add_column("Priority", style="yellow")
+        table.add_column("Coverage Gap", style="green", width=30)
+        
+        for sug in suggestions[:10]:
+            table.add_row(
+                sug.get("test_id", "N/A"),
+                sug.get("test_name", "N/A")[:40],
+                sug.get("priority", "N/A"),
+                sug.get("coverage_gap", "N/A")[:30]
+            )
+        
+        if len(suggestions) > 10:
+            table.add_row("...", f"({len(suggestions) - 10} more)", "", "")
+        
+        console.print(table)
+        console.print("\n[yellow]Note: These are SUGGESTIONS. You can approve adding these to the test suite.[/yellow]\n")
+    
+    # Summary
+    console.print(f"[bold]Summary:[/bold]")
+    console.print(f"  - Total input tests: {analysis.get('total_input_tests', 0)}")
+    console.print(f"  - Duplicates found: {analysis.get('duplicate_count', 0)}")
+    console.print(f"  - Suggested tests: {len(suggestions)}")
+    console.print(f"  - Efficient test count: {analysis.get('efficient_test_count', 0)}")
+    console.print(f"  - Overall coverage: {analysis.get('overall_coverage', 0):.1f}%\n")
+    
+    # Ask for approval
+    if duplicates or suggestions:
+        approve = Confirm.ask(
+            "[bold cyan]Do you want to approve test case modifications?[/bold cyan]\n"
+            "[dim](This will remove duplicates and/or add suggested tests)[/dim]",
+            default=False
+        )
+        
+        if approve:
+            console.print("[green]✓ Test case modifications approved[/green]")
+            state["test_case_modifications_approved"] = True
+            # TODO: Apply modifications to test cases CSV
+            # For now, we'll just flag it - actual modification can be done in a separate step
+        else:
+            console.print("[yellow]Test case modifications not approved - continuing with original test cases[/yellow]")
+            state["test_case_modifications_approved"] = False
+    else:
+        console.print("[green]No test case modifications needed[/green]")
+        state["test_case_modifications_approved"] = True  # Auto-approve if no changes needed
+    
+    console.print()
+    return state
+
+
 def skip_human_gate(state: AgentState, gate_name: str) -> AgentState:
     """
     Skip a human gate (for automated/batch mode).
@@ -422,6 +533,11 @@ def skip_human_gate(state: AgentState, gate_name: str) -> AgentState:
     
     state["current_node"] = gate_name
     state["node_history"] = state.get("node_history", []) + [gate_name]
-    state["plan_approved"] = True
+    
+    # For test case gate, auto-approve means don't modify
+    if gate_name == "human_gate_test_cases":
+        state["test_case_modifications_approved"] = False
+    else:
+        state["plan_approved"] = True
     
     return state

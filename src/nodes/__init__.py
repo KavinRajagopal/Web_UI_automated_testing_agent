@@ -19,7 +19,7 @@ from .human_gates import (
 )
 from .planning import planning_node
 from .generation import generation_node
-from .verification import verification_node
+from .verification.verification_node import verification_node
 from .recovery import recovery_node
 from .reporting import reporting_node
 

@@ -1,11 +1,11 @@
 """Flow class for ProductsFlow."""
-        
+            
 from pages.productspage import ProductsPage
 from pages.cartpage import CartPage
 
 
 class ProductsFlow:
-    """Helper class for Product browsing and sorting flow helpers for inventory management scenarios."""
+    """Helper class for Product browsing and sorting flow helpers."""
     
     def __init__(self, driver, base_url):
         self.driver = driver

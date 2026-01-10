@@ -153,6 +153,77 @@ class TestCaseRow(BaseModel):
 
 
 # =============================================================================
+# TEST CASE ANALYSIS MODELS
+# =============================================================================
+
+class DuplicateTestCase(BaseModel):
+    """Identified duplicate test case."""
+    test_id: str
+    test_name: str
+    duplicate_of: str = Field(..., description="test_id of the original")
+    similarity_score: float = Field(..., ge=0.0, le=1.0, description="Similarity score 0-1")
+    reason: str = Field(..., description="Why this is considered a duplicate")
+    recommendation: str = Field(default="merge", description="merge, remove, or keep_separate")
+
+
+class SuggestedTestCase(BaseModel):
+    """Suggested additional test case."""
+    test_id: str = Field(..., description="Suggested test ID")
+    test_name: str = Field(..., description="Suggested test name")
+    module: str
+    priority: str = Field(default="P1")
+    steps: str
+    expected_result: str
+    reason: str = Field(..., description="Why this test case should be added")
+    coverage_gap: str = Field(..., description="What coverage gap this addresses")
+
+
+class TestCasePriority(BaseModel):
+    """Test case with priority analysis."""
+    test_id: str
+    test_name: str
+    current_priority: str
+    recommended_priority: str
+    priority_reason: str = Field(..., description="Why this priority is recommended")
+    is_critical: bool = Field(default=False, description="Is this a critical test case")
+
+
+class CoverageMetrics(BaseModel):
+    """Coverage metrics for a module or page."""
+    module_or_page: str
+    total_test_cases: int
+    coverage_percentage: float = Field(..., ge=0.0, le=100.0)
+    covered_scenarios: List[str] = Field(default_factory=list)
+    missing_scenarios: List[str] = Field(default_factory=list)
+    recommendations: List[str] = Field(default_factory=list)
+
+
+class TestCaseAnalysis(BaseModel):
+    """Complete test case analysis results."""
+    # Duplicate detection
+    duplicates: List[DuplicateTestCase] = Field(default_factory=list)
+    duplicate_count: int = Field(default=0)
+    efficient_test_count: int = Field(default=0)
+    
+    # Suggested test cases
+    suggested_tests: List[SuggestedTestCase] = Field(default_factory=list)
+    
+    # Priority analysis
+    priority_analysis: List[TestCasePriority] = Field(default_factory=list)
+    critical_tests: List[str] = Field(default_factory=list, description="List of critical test IDs")
+    
+    # Coverage analysis
+    coverage_by_module: Dict[str, CoverageMetrics] = Field(default_factory=dict)
+    coverage_by_page: Dict[str, CoverageMetrics] = Field(default_factory=dict)
+    overall_coverage: float = Field(default=0.0, ge=0.0, le=100.0)
+    
+    # Summary
+    total_input_tests: int = Field(default=0)
+    recommended_test_count: int = Field(default=0)
+    analysis_timestamp: datetime = Field(default_factory=datetime.now)
+
+
+# =============================================================================
 # ELEMENT MODELS
 # =============================================================================
 
@@ -345,7 +416,7 @@ class GenerationPlan(BaseModel):
 
 class CheckpointResult(BaseModel):
     """Result of a single verification checkpoint."""
-    checkpoint_name: str = Field(..., description="A, B, C, or D")
+    checkpoint_name: str = Field(..., description="A, B, C, D1, D2, D3, or D4")
     checkpoint_description: str = Field(..., description="What was checked")
     
     status: CheckpointStatus = Field(..., description="passed, failed, skipped")
@@ -377,7 +448,15 @@ class VerificationResults(BaseModel):
     checkpoint_a: Optional[CheckpointResult] = Field(None, description="Syntax check")
     checkpoint_b: Optional[CheckpointResult] = Field(None, description="Import check")
     checkpoint_c: Optional[CheckpointResult] = Field(None, description="Pytest collection")
-    checkpoint_d: Optional[CheckpointResult] = Field(None, description="Test execution")
+    
+    # Granular D checkpoints
+    checkpoint_d1: Optional[CheckpointResult] = Field(None, description="Page object structure validation")
+    checkpoint_d2: Optional[CheckpointResult] = Field(None, description="Method contract validation")
+    checkpoint_d3: Optional[CheckpointResult] = Field(None, description="Method signature validation")
+    checkpoint_d4: Optional[CheckpointResult] = Field(None, description="Test execution")
+    
+    # Backward compatibility: checkpoint_d maps to checkpoint_d4
+    checkpoint_d: Optional[CheckpointResult] = Field(None, description="Test execution (deprecated, use checkpoint_d4)")
     
     # Overall
     all_passed: bool = Field(default=False)
@@ -388,7 +467,10 @@ class VerificationResults(BaseModel):
     
     def calculate_all_passed(self) -> bool:
         """Check if all checkpoints passed."""
-        checkpoints = [self.checkpoint_a, self.checkpoint_b, self.checkpoint_c, self.checkpoint_d]
+        checkpoints = [
+            self.checkpoint_a, self.checkpoint_b, self.checkpoint_c,
+            self.checkpoint_d1, self.checkpoint_d2, self.checkpoint_d3, self.checkpoint_d4
+        ]
         for cp in checkpoints:
             if cp and cp.status == CheckpointStatus.FAILED:
                 return False
@@ -437,9 +519,80 @@ class AIReport(BaseModel):
     # LLM usage
     llm_calls: int = Field(default=0)
     total_tokens: int = Field(default=0)
+    input_tokens: int = Field(default=0)
+    output_tokens: int = Field(default=0)
+    
+    # Cost (approximate, in USD)
+    input_cost: float = Field(default=0.0, description="Cost for input tokens (USD)")
+    output_cost: float = Field(default=0.0, description="Cost for output tokens (USD)")
+    total_cost: float = Field(default=0.0, description="Total approximate cost (USD)")
+    model_id: str = Field(default="us.anthropic.claude-opus-4-5-20251101-v1:0", description="Model used for pricing")
+    
+    # Test execution results
+    test_execution_results: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Test execution details from checkpoint D4"
+    )
+    tests_passed_count: int = Field(default=0, description="Number of tests that passed")
+    tests_failed_count: int = Field(default=0, description="Number of tests that failed")
+    test_status: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Individual test status: [{test_name, status, error}]"
+    )
+    
+    # Verification errors summary
+    verification_errors: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Summary of all verification errors by checkpoint"
+    )
     
     # Timing
     duration_seconds: Optional[float] = None
+
+
+class TestCasePriority(BaseModel):
+    """Test case with priority analysis."""
+    test_id: str
+    test_name: str
+    current_priority: str
+    recommended_priority: str
+    priority_reason: str = Field(..., description="Why this priority is recommended")
+    is_critical: bool = Field(default=False, description="Is this a critical test case")
+
+
+class CoverageMetrics(BaseModel):
+    """Coverage metrics for a module or page."""
+    module_or_page: str
+    total_test_cases: int
+    coverage_percentage: float = Field(..., ge=0.0, le=100.0)
+    covered_scenarios: List[str] = Field(default_factory=list)
+    missing_scenarios: List[str] = Field(default_factory=list)
+    recommendations: List[str] = Field(default_factory=list)
+
+
+class TestCaseAnalysis(BaseModel):
+    """Complete test case analysis results."""
+    # Duplicate detection
+    duplicates: List[DuplicateTestCase] = Field(default_factory=list)
+    duplicate_count: int = Field(default=0)
+    efficient_test_count: int = Field(default=0)
+    
+    # Suggested test cases
+    suggested_tests: List[SuggestedTestCase] = Field(default_factory=list)
+    
+    # Priority analysis
+    priority_analysis: List[TestCasePriority] = Field(default_factory=list)
+    critical_tests: List[str] = Field(default_factory=list, description="List of critical test IDs")
+    
+    # Coverage analysis
+    coverage_by_module: Dict[str, CoverageMetrics] = Field(default_factory=dict)
+    coverage_by_page: Dict[str, CoverageMetrics] = Field(default_factory=dict)
+    overall_coverage: float = Field(default=0.0, ge=0.0, le=100.0)
+    
+    # Summary
+    total_input_tests: int = Field(default=0)
+    recommended_test_count: int = Field(default=0)
+    analysis_timestamp: datetime = Field(default_factory=datetime.now)
     
     def to_markdown(self) -> str:
         """Generate markdown report."""
@@ -459,10 +612,99 @@ class AIReport(BaseModel):
             f"| Pages Generated | {self.pages_generated} |",
             f"| Flows Generated | {self.flows_generated} |",
             f"| Verification | {'✅ PASSED' if self.verification_passed else '❌ FAILED'} |",
+            f"| Tests Passed | {self.tests_passed_count} |",
+            f"| Tests Failed | {self.tests_failed_count} |",
             f"| LLM Calls | {self.llm_calls} |",
             f"| Total Tokens | {self.total_tokens:,} |",
+            f"| Input Tokens | {self.input_tokens:,} |",
+            f"| Output Tokens | {self.output_tokens:,} |",
+            f"| **Total Cost (Approx.)** | **${self.total_cost:.4f}** |",
+            f"|   - Input Cost | ${self.input_cost:.4f} |",
+            f"|   - Output Cost | ${self.output_cost:.4f} |",
             f"",
         ]
+        
+        # Add Verification Checkpoints section
+        if self.checkpoints_summary:
+            lines.extend([
+                f"## Verification Checkpoints",
+                f"",
+                f"| Checkpoint | Status |",
+                f"|------------|--------|",
+            ])
+            for cp_name, cp_status in sorted(self.checkpoints_summary.items()):
+                status_icon = "✅" if cp_status == "passed" else "❌" if cp_status == "failed" else "⏭️"
+                lines.append(f"| {cp_name} | {status_icon} {cp_status} |")
+            lines.append("")
+        
+        # Add Test Status section
+        if self.test_status:
+            lines.extend([
+                f"## Test Execution Status",
+                f"",
+                f"**Total:** {self.tests_passed_count} passed, {self.tests_failed_count} failed",
+                f"",
+                f"| Test Name | Status | Error Type |",
+                f"|-----------|--------|------------|",
+            ])
+            for test in self.test_status:
+                status = test.get("status", "unknown")
+                if status == "passed":
+                    status_icon = "✅"
+                elif status == "failed":
+                    status_icon = "❌"
+                else:
+                    status_icon = "⏭️"  # not_run or other
+                error_type = test.get("error_type", "N/A")
+                lines.append(f"| `{test.get('test_name', 'unknown')}` | {status_icon} {status} | {error_type} |")
+            lines.append("")
+            
+            # Add detailed errors for failed tests
+            failed_tests = [t for t in self.test_status if t.get("status") == "failed"]
+            if failed_tests:
+                lines.extend([
+                    f"### Failed Test Details",
+                    f"",
+                ])
+                for test in failed_tests:
+                    lines.extend([
+                        f"#### {test.get('test_name', 'unknown')}",
+                        f"",
+                        f"**File:** `{test.get('file', 'unknown')}`",
+                        f"**Error Type:** {test.get('error_type', 'Unknown')}",
+                        f"",
+                        f"```",
+                        test.get("error_summary", "No error details available"),
+                        f"```",
+                        f"",
+                    ])
+        
+        # Add Verification Errors section
+        if self.verification_errors:
+            lines.extend([
+                f"## Verification Errors",
+                f"",
+            ])
+            for checkpoint_name, error_info in self.verification_errors.items():
+                lines.extend([
+                    f"### Checkpoint {checkpoint_name}",
+                    f"",
+                    f"- **Status:** {error_info.get('status', 'unknown')}",
+                    f"- **Files Failed:** {len(error_info.get('files_failed', []))}",
+                    f"- **Error Count:** {error_info.get('error_count', 0)}",
+                    f"",
+                ])
+                if error_info.get("errors"):
+                    lines.append("**Errors:**")
+                    for filepath, error_msg in list(error_info.get("errors", {}).items())[:5]:
+                        error_preview = str(error_msg)[:300] + ("..." if len(str(error_msg)) > 300 else "")
+                        lines.extend([
+                            f"- **{filepath}:**",
+                            f"  ```",
+                            error_preview,
+                            f"  ```",
+                            f"",
+                        ])
         
         if self.selector_risks:
             lines.extend([

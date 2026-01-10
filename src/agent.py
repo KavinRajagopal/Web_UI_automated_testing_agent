@@ -28,9 +28,10 @@ from .nodes.human_gates import (
 )
 from .nodes.planning import planning_node
 from .nodes.generation import generation_node
-from .nodes.verification import verification_node
+from .nodes.verification.verification_node import verification_node
 from .nodes.recovery import recovery_node, should_retry_verification
 from .nodes.reporting import reporting_node
+from .utils.cost_calculator import calculate_cost
 
 # Configure logging
 logging.basicConfig(
@@ -51,12 +52,27 @@ def route_after_onboarding(state: AgentState) -> str:
         logger.error("Onboarding failed with errors")
         return END
     
+    # Check if test case modifications are needed (duplicates/suggestions)
+    if state.get("needs_test_case_review", False):
+        return "human_gate_test_cases"
+    
     # Check if inputs need review
     if state.get("needs_input_review", False):
         return "human_gate_inputs"
     
     # Skip to planning if inputs are pre-validated
     return "planning"
+
+
+def route_after_test_case_review(state: AgentState) -> str:
+    """Determine next node after test case review."""
+    if state.get("test_case_modifications_approved", False):
+        # TODO: Apply modifications if approved
+        # For now, continue to planning
+        return "planning"
+    else:
+        # Continue with original test cases
+        return "planning"
 
 
 def route_after_input_review(state: AgentState) -> str:
@@ -94,7 +110,16 @@ def route_after_recovery(state: AgentState) -> str:
     """Determine next node after recovery."""
     if state.get("needs_human_intervention", False):
         return "human_gate_final"
+    
+    # Check if this is incremental recovery (stage-specific)
+    recovery_stage = state.get("recovery_stage", None)
+    if recovery_stage:
+        # Route back to generation to re-verify the specific stage
+        logger.info(f"Routing back to generation for Stage {recovery_stage} re-verification")
+        state["needs_recovery"] = False  # Clear flag so generation can re-verify
+        return "generation"
     else:
+        # Final verification after all stages complete
         return "verification"
 
 
@@ -136,6 +161,8 @@ def build_agent_graph(auto_approve: bool = False, checkpointer=None) -> StateGra
     graph.add_node("onboarding", onboarding_node)
     
     if auto_approve:
+        graph.add_node("human_gate_test_cases",
+                       lambda s: skip_human_gate(s, "human_gate_test_cases"))
         graph.add_node("human_gate_inputs", 
                        lambda s: skip_human_gate(s, "human_gate_inputs"))
         graph.add_node("human_gate_plan",
@@ -143,6 +170,7 @@ def build_agent_graph(auto_approve: bool = False, checkpointer=None) -> StateGra
         graph.add_node("human_gate_final",
                        lambda s: skip_human_gate(s, "human_gate_final"))
     else:
+        graph.add_node("human_gate_test_cases", human_gate_test_cases)
         graph.add_node("human_gate_inputs", human_gate_inputs)
         graph.add_node("human_gate_plan", human_gate_plan)
         graph.add_node("human_gate_final", human_gate_final)
@@ -161,7 +189,17 @@ def build_agent_graph(auto_approve: bool = False, checkpointer=None) -> StateGra
         "onboarding",
         route_after_onboarding,
         {
+            "human_gate_test_cases": "human_gate_test_cases",
             "human_gate_inputs": "human_gate_inputs",
+            "planning": "planning",
+            END: END
+        }
+    )
+    
+    graph.add_conditional_edges(
+        "human_gate_test_cases",
+        route_after_test_case_review,
+        {
             "planning": "planning",
             END: END
         }
@@ -249,9 +287,11 @@ class TestGenerationAgent:
         llm_model_id: str = "us.anthropic.claude-opus-4-5-20251101-v1:0",
         llm_region: str = "us-east-2",
         llm_profile: str = "bedrock-user",
-        max_recovery_attempts: int = 3,
+        max_recovery_attempts: int = 6,
         auto_approve: bool = False,
-        enable_checkpointing: bool = False
+        enable_checkpointing: bool = False,
+        enable_allure: bool = False,
+        headless_mode: bool = True
     ):
         """
         Initialize the agent.
@@ -265,6 +305,8 @@ class TestGenerationAgent:
             max_recovery_attempts: Max recovery retries
             auto_approve: Skip human gates if True
             enable_checkpointing: Enable state checkpointing for debugging
+            enable_allure: Enable Allure reporting (default: False)
+            headless_mode: Run tests in headless mode (default: True)
         """
         self.inputs_path = os.path.abspath(inputs_path)
         self.output_path = os.path.abspath(output_path)
@@ -274,6 +316,8 @@ class TestGenerationAgent:
         self.max_recovery_attempts = max_recovery_attempts
         self.auto_approve = auto_approve
         self.enable_checkpointing = enable_checkpointing
+        self.enable_allure = enable_allure
+        self.headless_mode = headless_mode
         
         # Setup checkpointer for debugging/resume
         self.checkpointer = MemorySaver() if enable_checkpointing else None
@@ -315,7 +359,9 @@ class TestGenerationAgent:
             llm_model_id=self.llm_model_id,
             llm_region=self.llm_region,
             llm_profile=self.llm_profile,
-            max_recovery_attempts=self.max_recovery_attempts
+            max_recovery_attempts=self.max_recovery_attempts,
+            enable_allure=self.enable_allure,
+            headless_mode=self.headless_mode
         )
         
         # Config for checkpointing
@@ -340,6 +386,16 @@ class TestGenerationAgent:
             logger.info(f"Recovery attempts: {final_state.get('recovery_attempts', 0)}")
             logger.info(f"Verification: {'PASSED' if final_state.get('verification_passed') else 'FAILED'}")
             logger.info(f"LLM calls: {final_state.get('llm_calls', 0)}")
+            
+            # Calculate and display cost
+            input_tokens = final_state.get('llm_input_tokens', 0)
+            output_tokens = final_state.get('llm_output_tokens', 0)
+            if input_tokens > 0 or output_tokens > 0:
+                model_id = final_state.get('llm_model_id', 'us.anthropic.claude-opus-4-5-20251101-v1:0')
+                cost_info = calculate_cost(input_tokens, output_tokens, model_id)
+                logger.info(f"Total tokens: {input_tokens + output_tokens:,} (input: {input_tokens:,}, output: {output_tokens:,})")
+                logger.info(f"**Approximate Cost: ${cost_info['total_cost']:.4f}** (input: ${cost_info['input_cost']:.4f}, output: ${cost_info['output_cost']:.4f})")
+            
             logger.info("=" * 60)
             
             return final_state
@@ -368,6 +424,16 @@ class TestGenerationAgent:
                 logger.info(f"Recovery attempts: {final_state.get('recovery_attempts', 0)}")
                 logger.info(f"Verification: {'PASSED' if final_state.get('verification_passed') else 'FAILED'}")
                 logger.info(f"LLM calls: {final_state.get('llm_calls', 0)}")
+                
+                # Calculate and display cost
+                input_tokens = final_state.get('llm_input_tokens', 0)
+                output_tokens = final_state.get('llm_output_tokens', 0)
+                if input_tokens > 0 or output_tokens > 0:
+                    model_id = final_state.get('llm_model_id', 'us.anthropic.claude-opus-4-5-20251101-v1:0')
+                    cost_info = calculate_cost(input_tokens, output_tokens, model_id)
+                    logger.info(f"Total tokens: {input_tokens + output_tokens:,} (input: {input_tokens:,}, output: {output_tokens:,})")
+                    logger.info(f"**Approximate Cost: ${cost_info['total_cost']:.4f}** (input: ${cost_info['input_cost']:.4f}, output: ${cost_info['output_cost']:.4f})")
+                
                 logger.info("=" * 60)
                 
         except Exception as e:
@@ -441,8 +507,8 @@ Examples:
     parser.add_argument(
         "--max-retries",
         type=int,
-        default=3,
-        help="Max recovery retries (default: 3)"
+        default=6,
+        help="Max recovery retries (default: 6)"
     )
     parser.add_argument(
         "--verbose", "-v",
@@ -453,6 +519,11 @@ Examples:
         "--checkpoint",
         action="store_true",
         help="Enable checkpointing for debugging"
+    )
+    parser.add_argument(
+        "--allure",
+        action="store_true",
+        help="Enable Allure reporting (adds --alluredir to pytest and screenshot capture on failures)"
     )
     
     args = parser.parse_args()
@@ -469,7 +540,8 @@ Examples:
         llm_region=args.region,
         max_recovery_attempts=args.max_retries,
         auto_approve=args.auto,
-        enable_checkpointing=args.checkpoint
+        enable_checkpointing=args.checkpoint,
+        enable_allure=args.allure
     )
     
     try:

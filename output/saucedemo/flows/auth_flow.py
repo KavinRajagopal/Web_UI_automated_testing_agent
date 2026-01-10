@@ -1,5 +1,5 @@
 """Flow class for AuthFlow."""
-        
+            
 from pages.loginpage import LoginPage
 from pages.productspage import ProductsPage
 

@@ -27,7 +27,8 @@ class BedrockClient:
         region_name: str = "us-east-2",
         profile_name: Optional[str] = None,
         max_tokens: int = 16384,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        enable_reasoning: bool = True
     ):
         """
         Initialize Bedrock client.
@@ -38,10 +39,12 @@ class BedrockClient:
             profile_name: AWS profile name (from ~/.aws/credentials)
             max_tokens: Maximum tokens in response
             temperature: Sampling temperature (0.0 to 1.0)
+            enable_reasoning: Enable reasoning mode for better quality (default: True)
         """
         self.model_id = model_id
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.enable_reasoning = enable_reasoning
         self.region_name = region_name
         self.profile_name = profile_name
         
@@ -98,21 +101,31 @@ class BedrockClient:
             ClientError: If AWS API call fails
         """
         try:
+            # Prepare inference config
+            # Note: Reasoning parameter is not supported in Converse API inferenceConfig
+            # It may be available in future API versions or via different endpoints
+            inference_config = {
+                "maxTokens": max_tokens or self.max_tokens,
+                "temperature": temperature if temperature is not None else self.temperature,
+            }
+            
+            # TODO: Reasoning support - currently not available in Converse API
+            # When AWS adds reasoning support, uncomment:
+            # if self.enable_reasoning:
+            #     inference_config["reasoning"] = {"enabled": True}
+            
             # Prepare request
             request = {
                 "modelId": self.model_id,
                 "messages": messages,
-                "inferenceConfig": {
-                    "maxTokens": max_tokens or self.max_tokens,
-                    "temperature": temperature if temperature is not None else self.temperature,
-                }
+                "inferenceConfig": inference_config
             }
             
             # Add system prompt if provided
             if system:
                 request["system"] = [{"text": system}]
             
-            logger.debug(f"Converse request to {self.model_id}")
+            logger.debug(f"Converse request to {self.model_id} (reasoning: {self.enable_reasoning} - not yet supported in API)")
             
             # Call Converse API
             response = self.client.converse(**request)

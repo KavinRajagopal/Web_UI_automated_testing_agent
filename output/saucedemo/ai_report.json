@@ -1,19 +1,15 @@
 {
-  "session_id": "20260109_190359",
+  "session_id": "20260109_230051",
   "module_name": "saucedemo",
-  "created_at": "2026-01-09T19:16:29.493048",
+  "created_at": "2026-01-09T23:08:02.538337",
   "files_generated": [
     "base_page.py",
     "login_page.py",
     "products_page.py",
     "cart_page.py",
+    "__init__.py",
     "auth_flow.py",
     "products_flow.py",
-    "test_saucedemo.py",
-    "conftest.py",
-    "pytest.ini",
-    "__init__.py",
-    "__init__.py",
     "__init__.py"
   ],
   "tests_generated": 10,
@@ -33,15 +29,15 @@
   "recommendations": [
     "Review and fix verification failures before running tests",
     "Code required 6 recovery attempts - review generated code quality",
-    "Only 10/24 test cases were generated - review planning output"
+    "Only 10/32 test cases were generated - review planning output"
   ],
-  "llm_calls": 22,
-  "total_tokens": 84035,
-  "input_tokens": 44214,
-  "output_tokens": 39821,
-  "input_cost": 0.6632,
-  "output_cost": 2.9866,
-  "total_cost": 3.6498,
+  "llm_calls": 6,
+  "total_tokens": 29855,
+  "input_tokens": 16721,
+  "output_tokens": 13134,
+  "input_cost": 0.2508,
+  "output_cost": 0.985,
+  "total_cost": 1.2359,
   "model_id": "us.anthropic.claude-opus-4-5-20251101-v1:0",
   "test_execution_results": {
     "tests_passed": 9,
@@ -81,69 +77,6 @@
       "status": "failed",
       "error_type": "AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'",
       "error_summary": "E   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'\nE   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'\nE   assert 'az' == 'Name (A to Z)'\nE     \nE     - Name (A to Z)\nE     + az\n=========================== short test summary info ============================"
-    },
-    {
-      "test_name": "test_valid_login_with_standard_user",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_invalid_login_with_wrong_password",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_invalid_login_with_wrong_username",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_login_with_locked_out_user",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_login_with_empty_username",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_login_with_empty_password",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_login_with_both_fields_empty",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_login_with_special_characters_in_username",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
-    },
-    {
-      "test_name": "test_view_products_list_after_login",
-      "file": "tests/test_saucedemo.py",
-      "status": "passed",
-      "error_type": null,
-      "error_summary": null
     }
   ],
   "verification_errors": {

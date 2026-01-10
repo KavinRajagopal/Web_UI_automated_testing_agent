@@ -54,6 +54,15 @@ Return a JSON object with this structure:
             "description": "Test valid login with correct credentials"
         }
     ],
+    "test_batches": [
+        [
+            {
+                "test_id": "TC_LOGIN_001",
+                "test_name": "test_valid_login",
+                ...
+            }
+        ]
+    ],
     "conftest_fixtures": ["driver", "base_url", "login_user"]
 }
 
@@ -64,7 +73,12 @@ GUIDELINES:
 4. Use pytest markers from test case tags
 5. Include all elements referenced in test steps
 6. Generate helper methods for common interactions
-7. Follow Python naming conventions (snake_case)"""
+7. Follow Python naming conventions (snake_case)
+8. **IMPORTANT: Organize tests into batches of 5-10 tests per batch for better accuracy**
+   - Group related tests together (e.g., all login tests in one batch)
+   - Prioritize P0 tests in first batch
+   - Each batch should be independently verifiable
+   - test_batches is a list of lists, where each inner list is a batch of test objects"""
 
 
 MAX_TEST_CASES_PER_BATCH = 10  # Limit test cases to keep LLM responses fast and accurate
@@ -184,7 +198,8 @@ def planning_node(state: AgentState) -> AgentState:
         model_id=state.get("llm_model_id", "us.anthropic.claude-opus-4-5-20251101-v1:0"),
         region_name=state.get("llm_region", "us-east-2"),
         profile_name=state.get("llm_profile", "bedrock-user"),
-        max_tokens=16384
+        max_tokens=16384,
+        enable_reasoning=True  # Enable reasoning for better planning
     )
     
     try:
@@ -207,8 +222,40 @@ def planning_node(state: AgentState) -> AgentState:
         
         plan_dict = json.loads(text)
         
+        # Organize tests into batches if not already done
+        all_tests = plan_dict.get("tests", [])
+        test_batches = plan_dict.get("test_batches", [])
+        
+        # If planner didn't create batches, create them here (5-10 tests per batch)
+        if not test_batches and all_tests:
+            logger.info(f"Organizing {len(all_tests)} tests into batches...")
+            batch_size = 8  # Optimal batch size for accuracy
+            test_batches = []
+            
+            # Prioritize P0 tests first
+            p0_tests = [t for t in all_tests if t.get("priority") == "P0" or "P0" in str(t.get("markers", []))]
+            other_tests = [t for t in all_tests if t not in p0_tests]
+            
+            # Create batches
+            for i in range(0, len(p0_tests), batch_size):
+                test_batches.append(p0_tests[i:i + batch_size])
+            
+            for i in range(0, len(other_tests), batch_size):
+                test_batches.append(other_tests[i:i + batch_size])
+            
+            plan_dict["test_batches"] = test_batches
+            logger.info(f"  Created {len(test_batches)} test batches")
+            for i, batch in enumerate(test_batches, 1):
+                logger.info(f"    Batch {i}: {len(batch)} tests")
+        
         # Validate and store plan
         state["generation_plan"] = plan_dict
+        
+        # Update scratchpad with plan
+        scratchpad = state.get("scratchpad")
+        if scratchpad:
+            scratchpad.add_generation_plan(plan_dict)
+            scratchpad.update_progress(state)
         
         # Update LLM usage
         usage = llm.get_usage_stats()
@@ -222,6 +269,11 @@ def planning_node(state: AgentState) -> AgentState:
         logger.info(f"  Pages: {len(plan_dict.get('pages', []))}")
         logger.info(f"  Flows: {len(plan_dict.get('flows', []))}")
         logger.info(f"  Tests: {len(plan_dict.get('tests', []))}")
+        test_batches = plan_dict.get('test_batches', [])
+        if test_batches:
+            logger.info(f"  Test Batches: {len(test_batches)}")
+            for i, batch in enumerate(test_batches, 1):
+                logger.info(f"    Batch {i}: {len(batch)} tests")
         logger.info(f"  Fixtures: {len(plan_dict.get('conftest_fixtures', []))}")
         logger.info(f"  LLM tokens: {usage['total_tokens']}")
         logger.info("-" * 40)

@@ -17,6 +17,8 @@ from ..models.schemas import ModuleSpec, TestCaseRow, PageMetadata
 from ..parsers.module_parser import ModuleParser
 from ..parsers.csv_parser import CSVParser
 from ..parsers.element_parser import ElementParser
+from ..tools.testcase_analyzer import TestCaseAnalyzer
+from ..utils.scratchpad import AgentScratchpad
 
 logger = logging.getLogger(__name__)
 
@@ -207,12 +209,13 @@ def onboarding_node(state: AgentState) -> AgentState:
         return state
     
     # Step 3: Load testcases.csv (or flag for generation)
+    test_cases_loaded = []
     if input_status["testcases"]:
         try:
-            test_cases, tc_warnings = _load_test_cases(inputs_path)
+            test_cases_loaded, tc_warnings = _load_test_cases(inputs_path)
             warnings.extend(tc_warnings)
-            state["test_cases"] = [tc.model_dump() for tc in test_cases]
-            logger.info(f"Loaded {len(test_cases)} test cases")
+            state["test_cases"] = [tc.model_dump() for tc in test_cases_loaded]
+            logger.info(f"Loaded {len(test_cases_loaded)} test cases")
         except Exception as e:
             warnings.append(f"Failed to load testcases.csv: {e}")
             state["test_cases"] = []
@@ -221,6 +224,124 @@ def onboarding_node(state: AgentState) -> AgentState:
         logger.info("testcases.csv not found - will need generation")
         state["test_cases"] = []
         generated_testcases = True
+    
+    # Step 3.5: Initialize scratchpad
+    output_path = state.get("output_path", "")
+    if output_path:
+        scratchpad = AgentScratchpad(output_path)
+        scratchpad.initialize(state)
+        state["scratchpad"] = scratchpad
+        logger.info("Initialized agent scratchpad")
+    else:
+        logger.warning("No output_path - skipping scratchpad initialization")
+    
+    # Step 3.6: Perform test case analysis if we have test cases
+    if test_cases_loaded and len(test_cases_loaded) > 0:
+        logger.info("=" * 60)
+        logger.info("TEST CASE ANALYSIS")
+        logger.info("=" * 60)
+        
+        try:
+            # Initialize LLM for analysis
+            from ..llm.bedrock_client import BedrockClient
+            llm = BedrockClient(
+                model_id=state.get("llm_model_id", "us.anthropic.claude-opus-4-5-20251101-v1:0"),
+                region_name=state.get("llm_region", "us-east-2"),
+                profile_name=state.get("llm_profile", "bedrock-user"),
+                max_tokens=16384
+            )
+            
+            analyzer = TestCaseAnalyzer(llm)
+            analysis = analyzer.analyze_test_cases(
+                test_cases=test_cases_loaded,
+                module_spec=state.get("module_spec", {}),
+                page_metadata=state.get("page_metadata", {})
+            )
+            
+            # Store analysis results
+            state["test_case_analysis"] = analysis.model_dump()
+            state["node_history"] = state.get("node_history", []) + ["test_analysis"]
+            
+            # Flag if test case modifications are needed (duplicates or suggestions)
+            has_duplicates = analysis.duplicate_count > 0
+            has_suggestions = len(analysis.suggested_tests) > 0
+            state["needs_test_case_review"] = has_duplicates or has_suggestions
+            
+            # Add to scratchpad
+            scratchpad = state.get("scratchpad")
+            if scratchpad:
+                scratchpad.add_test_analysis(analysis.model_dump())
+            
+            # Log summary
+            logger.info("-" * 40)
+            logger.info("ANALYSIS SUMMARY")
+            logger.info(f"  Total input tests: {analysis.total_input_tests}")
+            logger.info(f"  Duplicates found: {analysis.duplicate_count}")
+            logger.info(f"  Efficient test count: {analysis.efficient_test_count}")
+            logger.info(f"  Suggested tests: {len(analysis.suggested_tests)}")
+            logger.info(f"  Recommended test count: {analysis.recommended_test_count}")
+            logger.info(f"  Overall coverage: {analysis.overall_coverage:.1f}%")
+            logger.info(f"  Critical tests: {len(analysis.critical_tests)}")
+            logger.info("-" * 40)
+            
+            # Log duplicates
+            if analysis.duplicates:
+                logger.warning("DUPLICATE TEST CASES:")
+                for dup in analysis.duplicates[:5]:
+                    logger.warning(
+                        f"  ⚠ {dup.test_id} duplicates {dup.duplicate_of} "
+                        f"(similarity: {dup.similarity_score:.2f})"
+                    )
+                if len(analysis.duplicates) > 5:
+                    logger.warning(f"  ... and {len(analysis.duplicates) - 5} more")
+            
+            # Log suggested tests
+            if analysis.suggested_tests:
+                logger.info("SUGGESTED TEST CASES:")
+                for sug in analysis.suggested_tests[:5]:
+                    logger.info(
+                        f"  + {sug.test_id}: {sug.test_name} "
+                        f"(Priority: {sug.priority}, Gap: {sug.coverage_gap})"
+                    )
+                if len(analysis.suggested_tests) > 5:
+                    logger.info(f"  ... and {len(analysis.suggested_tests) - 5} more")
+            
+            # Log priority changes
+            priority_changes = [
+                p for p in analysis.priority_analysis 
+                if p.current_priority != p.recommended_priority
+            ]
+            if priority_changes:
+                logger.info("PRIORITY RECOMMENDATIONS:")
+                for pc in priority_changes[:5]:
+                    logger.info(
+                        f"  {pc.test_id}: {pc.current_priority} → {pc.recommended_priority} "
+                        f"({pc.priority_reason})"
+                    )
+                if len(priority_changes) > 5:
+                    logger.info(f"  ... and {len(priority_changes) - 5} more")
+            
+            # Log coverage by module
+            if analysis.coverage_by_module:
+                logger.info("COVERAGE BY MODULE:")
+                for module, metrics in list(analysis.coverage_by_module.items())[:3]:
+                    logger.info(
+                        f"  {module}: {metrics.coverage_percentage:.1f}% "
+                        f"({metrics.total_test_cases} tests)"
+                    )
+                    if metrics.missing_scenarios:
+                        logger.info(f"    Missing: {', '.join(metrics.missing_scenarios[:3])}")
+            
+            # Update LLM usage
+            usage = llm.get_usage_stats()
+            state["llm_calls"] = state.get("llm_calls", 0) + usage["call_count"]
+            state["llm_input_tokens"] = state.get("llm_input_tokens", 0) + usage["total_input_tokens"]
+            state["llm_output_tokens"] = state.get("llm_output_tokens", 0) + usage["total_output_tokens"]
+            
+        except Exception as e:
+            logger.warning(f"Test case analysis failed: {e}")
+            warnings.append(f"Test case analysis failed: {e}")
+            state["test_case_analysis"] = None
     
     # Step 4: Load element_metadata (or flag for generation)
     if input_status["element_metadata"]:

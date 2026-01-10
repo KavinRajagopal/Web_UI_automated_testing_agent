@@ -24,7 +24,7 @@ class AgentState(TypedDict, total=False):
     - Planning: LLM-generated plan
     - Generation: Generated code
     - Verification: Validation results
-    - Human Interaction: HITL state
+    - Human Interaction: HITL state\
     - Reporting: Final outputs
     - Metadata: Session tracking
     """
@@ -49,6 +49,12 @@ class AgentState(TypedDict, total=False):
     
     llm_profile: str
     """AWS profile name"""
+    
+    enable_allure: bool
+    """Enable Allure reporting (default: False)"""
+    
+    headless_mode: bool
+    """Run tests in headless mode (default: True)"""
     
     # =========================================================================
     # INPUTS (populated by onboarding node)
@@ -194,7 +200,9 @@ def create_initial_state(
     llm_model_id: str = "us.anthropic.claude-opus-4-5-20251101-v1:0",
     llm_region: str = "us-east-2",
     llm_profile: str = "bedrock-user",
-    max_recovery_attempts: int = 3
+    max_recovery_attempts: int = 3,
+    enable_allure: bool = False,
+    headless_mode: bool = True
 ) -> AgentState:
     """
     Create initial state with default values.
@@ -206,6 +214,8 @@ def create_initial_state(
         llm_region: AWS region
         llm_profile: AWS profile name
         max_recovery_attempts: Max retries for recovery
+        enable_allure: Enable Allure reporting (default: False)
+        headless_mode: Run tests in headless mode (default: True)
         
     Returns:
         Initialized AgentState
@@ -217,6 +227,8 @@ def create_initial_state(
         llm_model_id=llm_model_id,
         llm_region=llm_region,
         llm_profile=llm_profile,
+        enable_allure=enable_allure,
+        headless_mode=headless_mode,
         
         # Inputs (will be populated)
         module_spec={},

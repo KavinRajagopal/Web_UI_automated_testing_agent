@@ -1,49 +1,42 @@
 """
-ProductsPage - Page Object for Products/Inventory page
-Uses Selenium WebDriver for browser automation
+ProductsPage - Page Object for the Products/Inventory page
 """
 
-from typing import List
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from typing import List, Optional
 from pages.base_page import BasePage
 
 
 class ProductsPage(BasePage):
-    """Page Object for the Products/Inventory page on SauceDemo"""
+    """Page Object for the Products/Inventory page after login."""
 
     # Locators
     PAGE_TITLE = (By.CSS_SELECTOR, "[data-test='title']")
     INVENTORY_CONTAINER = (By.CSS_SELECTOR, "[data-test='inventory-container']")
     INVENTORY_LIST = (By.CSS_SELECTOR, "[data-test='inventory-list']")
-    INVENTORY_ITEM = (By.CSS_SELECTOR, "[data-test='inventory-item']")
-    INVENTORY_ITEM_NAME = (By.CSS_SELECTOR, "[data-test='inventory-item-name']")
-    INVENTORY_ITEM_PRICE = (By.CSS_SELECTOR, "[data-test='inventory-item-price']")
-    INVENTORY_ITEM_DESC = (By.CSS_SELECTOR, "[data-test='inventory-item-desc']")
+    INVENTORY_ITEMS = (By.CSS_SELECTOR, "[data-test='inventory-item']")
+    PRODUCT_NAMES = (By.CSS_SELECTOR, "[data-test='inventory-item-name']")
+    PRODUCT_PRICES = (By.CSS_SELECTOR, "[data-test='inventory-item-price']")
     SORT_DROPDOWN = (By.CSS_SELECTOR, "[data-test='product-sort-container']")
     SHOPPING_CART_LINK = (By.CSS_SELECTOR, "[data-test='shopping-cart-link']")
     SHOPPING_CART_BADGE = (By.CSS_SELECTOR, "[data-test='shopping-cart-badge']")
     BURGER_MENU_BUTTON = (By.ID, "react-burger-menu-btn")
+    ERROR_MESSAGE = (By.CSS_SELECTOR, "[data-test='error']")
+    
+    # Add to cart button pattern - will be formatted with product name
     ADD_TO_CART_BUTTON_TEMPLATE = "[data-test='add-to-cart-{product_id}']"
-    REMOVE_BUTTON_TEMPLATE = "[data-test='remove-{product_id}']"
 
-    def is_element_visible(self, by: By, value: str) -> bool:
+    def __init__(self, driver):
         """
-        Check if an element is visible on the page.
+        Initialize ProductsPage.
         
         Args:
-            by: The locator strategy (e.g., By.CSS_SELECTOR)
-            value: The locator value
-            
-        Returns:
-            bool: True if element is visible, False otherwise
+            driver: Selenium WebDriver instance
         """
-        try:
-            element = self.find_element_visible(by, value)
-            return element is not None and element.is_displayed()
-        except Exception:
-            return False
+        super().__init__(driver)
 
+    # Element Getters
     def get_page_title_element(self) -> WebElement:
         """
         Get the page title element.
@@ -53,7 +46,7 @@ class ProductsPage(BasePage):
         """
         return self.find_element_visible(*self.PAGE_TITLE)
 
-    def get_inventory_container_element(self) -> WebElement:
+    def get_inventory_container(self) -> WebElement:
         """
         Get the inventory container element.
         
@@ -62,7 +55,46 @@ class ProductsPage(BasePage):
         """
         return self.find_element_visible(*self.INVENTORY_CONTAINER)
 
-    def get_sort_dropdown_element(self) -> WebElement:
+    def get_inventory_list(self) -> WebElement:
+        """
+        Get the inventory list element.
+        
+        Returns:
+            WebElement: The inventory list element
+        """
+        return self.find_element_visible(*self.INVENTORY_LIST)
+
+    def get_inventory_items(self) -> List[WebElement]:
+        """
+        Get all inventory item elements.
+        
+        Returns:
+            List[WebElement]: List of inventory item elements
+        """
+        self.find_element_visible(*self.INVENTORY_ITEMS)
+        return self.driver.find_elements(*self.INVENTORY_ITEMS)
+
+    def get_product_name_elements(self) -> List[WebElement]:
+        """
+        Get all product name elements.
+        
+        Returns:
+            List[WebElement]: List of product name elements
+        """
+        self.find_element_visible(*self.PRODUCT_NAMES)
+        return self.driver.find_elements(*self.PRODUCT_NAMES)
+
+    def get_product_price_elements(self) -> List[WebElement]:
+        """
+        Get all product price elements.
+        
+        Returns:
+            List[WebElement]: List of product price elements
+        """
+        self.find_element_visible(*self.PRODUCT_PRICES)
+        return self.driver.find_elements(*self.PRODUCT_PRICES)
+
+    def get_sort_dropdown(self) -> WebElement:
         """
         Get the sort dropdown element.
         
@@ -71,7 +103,7 @@ class ProductsPage(BasePage):
         """
         return self.find_element_clickable(*self.SORT_DROPDOWN)
 
-    def get_shopping_cart_element(self) -> WebElement:
+    def get_shopping_cart_link(self) -> WebElement:
         """
         Get the shopping cart link element.
         
@@ -80,7 +112,18 @@ class ProductsPage(BasePage):
         """
         return self.find_element_clickable(*self.SHOPPING_CART_LINK)
 
-    def get_burger_menu_element(self) -> WebElement:
+    def get_shopping_cart_badge_element(self) -> Optional[WebElement]:
+        """
+        Get the shopping cart badge element if present.
+        
+        Returns:
+            WebElement or None: The cart badge element if present, None otherwise
+        """
+        if self.is_element_present(*self.SHOPPING_CART_BADGE):
+            return self.find_element(*self.SHOPPING_CART_BADGE)
+        return None
+
+    def get_burger_menu_button(self) -> WebElement:
         """
         Get the burger menu button element.
         
@@ -88,6 +131,29 @@ class ProductsPage(BasePage):
             WebElement: The burger menu button element
         """
         return self.find_element_clickable(*self.BURGER_MENU_BUTTON)
+
+    # Action Methods
+    def is_on_products_page(self) -> bool:
+        """
+        Check if currently on the products page.
+        
+        Returns:
+            bool: True if on products page, False otherwise
+        """
+        try:
+            title_element = self.get_page_title_element()
+            return title_element.text.upper() == "PRODUCTS"
+        except Exception:
+            return False
+
+    def is_inventory_container_visible(self) -> bool:
+        """
+        Check if the inventory container is visible.
+        
+        Returns:
+            bool: True if inventory container is visible, False otherwise
+        """
+        return self.is_element_present(*self.INVENTORY_CONTAINER)
 
     def get_page_title(self) -> str:
         """
@@ -98,53 +164,6 @@ class ProductsPage(BasePage):
         """
         return self.get_element_text(*self.PAGE_TITLE)
 
-    def is_products_page_displayed(self) -> bool:
-        """
-        Check if the products page is displayed.
-        
-        Returns:
-            bool: True if products page is displayed, False otherwise
-        """
-        return self.is_element_present(*self.INVENTORY_CONTAINER) and \
-               self.is_element_present(*self.PAGE_TITLE)
-
-    def is_page_loaded(self) -> bool:
-        """
-        Check if the page is fully loaded.
-        
-        Returns:
-            bool: True if page is loaded, False otherwise
-        """
-        return self.is_products_page_displayed()
-
-    def is_on_page(self) -> bool:
-        """
-        Verify user is on the products page.
-        
-        Returns:
-            bool: True if on products page, False otherwise
-        """
-        return self.is_products_page_displayed() and "Products" in self.get_page_title()
-
-    def get_product_count(self) -> int:
-        """
-        Get the total count of products displayed.
-        
-        Returns:
-            int: Number of products on the page
-        """
-        products = self.driver.find_elements(*self.INVENTORY_ITEM)
-        return len(products)
-
-    def get_all_product_items(self) -> List[WebElement]:
-        """
-        Get all product item elements displayed on the page.
-        
-        Returns:
-            List[WebElement]: List of product item WebElements
-        """
-        return self.driver.find_elements(*self.INVENTORY_ITEM)
-
     def get_all_product_names(self) -> List[str]:
         """
         Get all product names displayed on the page.
@@ -152,7 +171,7 @@ class ProductsPage(BasePage):
         Returns:
             List[str]: List of product names
         """
-        name_elements = self.driver.find_elements(*self.INVENTORY_ITEM_NAME)
+        name_elements = self.get_product_name_elements()
         return [element.text for element in name_elements]
 
     def get_all_product_prices(self) -> List[str]:
@@ -160,32 +179,29 @@ class ProductsPage(BasePage):
         Get all product prices displayed on the page.
         
         Returns:
-            List[str]: List of product prices as strings (e.g., "$29.99")
+            List[str]: List of product prices (including $ symbol)
         """
-        price_elements = self.driver.find_elements(*self.INVENTORY_ITEM_PRICE)
+        price_elements = self.get_product_price_elements()
         return [element.text for element in price_elements]
 
-    def _get_price_as_float(self, price_str: str) -> float:
+    def get_product_count(self) -> int:
         """
-        Convert price string to float.
+        Get the count of products displayed on the page.
         
-        Args:
-            price_str: Price string (e.g., "$29.99")
-            
         Returns:
-            float: Price as float value
+            int: Number of products displayed
         """
-        return float(price_str.replace("$", ""))
+        items = self.get_inventory_items()
+        return len(items)
 
-    def get_all_product_prices_as_floats(self) -> List[float]:
+    def is_inventory_displayed(self) -> bool:
         """
-        Get all product prices as float values.
+        Check if the inventory/products list is displayed.
         
         Returns:
-            List[float]: List of product prices as floats
+            bool: True if inventory is displayed, False otherwise
         """
-        prices = self.get_all_product_prices()
-        return [self._get_price_as_float(price) for price in prices]
+        return self.is_element_present(*self.INVENTORY_CONTAINER)
 
     def select_sort_option(self, option_value: str) -> None:
         """
@@ -196,7 +212,8 @@ class ProductsPage(BasePage):
                          Options: 'az', 'za', 'lohi', 'hilo'
         """
         from selenium.webdriver.support.ui import Select
-        dropdown = self.get_sort_dropdown_element()
+        
+        dropdown = self.get_sort_dropdown()
         select = Select(dropdown)
         select.select_by_value(option_value)
 
@@ -208,21 +225,10 @@ class ProductsPage(BasePage):
             str: The value of the currently selected sort option
         """
         from selenium.webdriver.support.ui import Select
-        dropdown = self.get_sort_dropdown_element()
+        
+        dropdown = self.get_sort_dropdown()
         select = Select(dropdown)
         return select.first_selected_option.get_attribute("value")
-
-    def _format_product_id(self, product_name: str) -> str:
-        """
-        Format product name to match data-test attribute format.
-        
-        Args:
-            product_name: The product name to format
-            
-        Returns:
-            str: Formatted product ID for use in selectors
-        """
-        return product_name.lower().replace(" ", "-")
 
     def add_product_to_cart(self, product_name: str) -> None:
         """
@@ -230,32 +236,28 @@ class ProductsPage(BasePage):
         
         Args:
             product_name: The name of the product to add
+                         e.g., 'Sauce Labs Backpack' -> 'sauce-labs-backpack'
         """
-        product_id = self._format_product_id(product_name)
-        selector = self.ADD_TO_CART_BUTTON_TEMPLATE.format(product_id=product_id)
-        self.click(By.CSS_SELECTOR, selector)
-
-    def remove_product_from_cart(self, product_name: str) -> None:
-        """
-        Remove a product from the cart by its name.
+        # Convert product name to the format used in data-test attribute
+        product_id = product_name.lower().replace(" ", "-")
+        add_button_selector = self.ADD_TO_CART_BUTTON_TEMPLATE.format(product_id=product_id)
+        add_button_locator = (By.CSS_SELECTOR, add_button_selector)
         
-        Args:
-            product_name: The name of the product to remove
-        """
-        product_id = self._format_product_id(product_name)
-        selector = self.REMOVE_BUTTON_TEMPLATE.format(product_id=product_id)
-        self.click(By.CSS_SELECTOR, selector)
+        self.click(*add_button_locator)
 
     def get_cart_badge_count(self) -> int:
         """
-        Get the count displayed on the cart badge.
+        Get the number displayed on the cart badge.
         
         Returns:
-            int: Number of items in cart, 0 if badge not present
+            int: The number of items in cart, 0 if badge not present
         """
-        if self.is_element_present(*self.SHOPPING_CART_BADGE):
-            badge_text = self.get_element_text(*self.SHOPPING_CART_BADGE)
-            return int(badge_text) if badge_text else 0
+        badge = self.get_shopping_cart_badge_element()
+        if badge:
+            try:
+                return int(badge.text)
+            except ValueError:
+                return 0
         return 0
 
     def click_shopping_cart(self) -> None:
@@ -266,75 +268,19 @@ class ProductsPage(BasePage):
 
     def open_burger_menu(self) -> None:
         """
-        Open the burger menu.
+        Open the burger/hamburger menu.
         """
         self.click(*self.BURGER_MENU_BUTTON)
 
-    def is_inventory_container_visible(self) -> bool:
+    # Additional helper methods
+    def is_page_loaded(self) -> bool:
         """
-        Check if the inventory container is visible.
+        Check if the products page is fully loaded.
         
         Returns:
-            bool: True if inventory container is visible, False otherwise
+            bool: True if page is loaded, False otherwise
         """
-        return self.is_element_present(*self.INVENTORY_CONTAINER)
-
-    def get_products_sorted_by_name(self, ascending: bool = True) -> List[str]:
-        """
-        Get product names sorted alphabetically.
-        
-        Args:
-            ascending: If True, sort A-Z; if False, sort Z-A
-            
-        Returns:
-            List[str]: Sorted list of product names
-        """
-        names = self.get_all_product_names()
-        return sorted(names, reverse=not ascending)
-
-    def verify_products_sorted_az(self) -> bool:
-        """
-        Verify products are sorted alphabetically A-Z.
-        
-        Returns:
-            bool: True if products are sorted A-Z, False otherwise
-        """
-        current_names = self.get_all_product_names()
-        expected_names = sorted(current_names)
-        return current_names == expected_names
-
-    def verify_products_sorted_za(self) -> bool:
-        """
-        Verify products are sorted alphabetically Z-A.
-        
-        Returns:
-            bool: True if products are sorted Z-A, False otherwise
-        """
-        current_names = self.get_all_product_names()
-        expected_names = sorted(current_names, reverse=True)
-        return current_names == expected_names
-
-    def verify_products_sorted_price_low_high(self) -> bool:
-        """
-        Verify products are sorted by price low to high.
-        
-        Returns:
-            bool: True if products are sorted by price ascending, False otherwise
-        """
-        current_prices = self.get_all_product_prices_as_floats()
-        expected_prices = sorted(current_prices)
-        return current_prices == expected_prices
-
-    def verify_products_sorted_price_high_low(self) -> bool:
-        """
-        Verify products are sorted by price high to low.
-        
-        Returns:
-            bool: True if products are sorted by price descending, False otherwise
-        """
-        current_prices = self.get_all_product_prices_as_floats()
-        expected_prices = sorted(current_prices, reverse=True)
-        return current_prices == expected_prices
+        return self.is_on_products_page() and self.is_inventory_displayed()
 
     def is_title_displayed(self) -> bool:
         """
@@ -347,9 +293,71 @@ class ProductsPage(BasePage):
 
     def get_title_text(self) -> str:
         """
-        Get the title text.
+        Get the title text (alias for get_page_title).
         
         Returns:
-            str: The title text
+            str: The page title text
         """
         return self.get_page_title()
+
+    def is_on_page(self) -> bool:
+        """
+        Check if on the products page (alias for is_on_products_page).
+        
+        Returns:
+            bool: True if on products page, False otherwise
+        """
+        return self.is_on_products_page()
+
+    def get_product_by_name(self, product_name: str) -> Optional[WebElement]:
+        """
+        Get a product item element by its name.
+        
+        Args:
+            product_name: The name of the product to find
+            
+        Returns:
+            WebElement or None: The product item element if found
+        """
+        items = self.get_inventory_items()
+        for item in items:
+            name_element = item.find_element(*self.PRODUCT_NAMES)
+            if name_element.text == product_name:
+                return item
+        return None
+
+    def get_product_price_by_name(self, product_name: str) -> Optional[str]:
+        """
+        Get the price of a specific product by name.
+        
+        Args:
+            product_name: The name of the product
+            
+        Returns:
+            str or None: The product price if found
+        """
+        product = self.get_product_by_name(product_name)
+        if product:
+            price_element = product.find_element(By.CSS_SELECTOR, "[data-test='inventory-item-price']")
+            return price_element.text
+        return None
+
+    def is_error_displayed(self) -> bool:
+        """
+        Check if an error message is displayed on the page.
+        
+        Returns:
+            bool: True if error is displayed, False otherwise
+        """
+        return self.is_element_present(*self.ERROR_MESSAGE)
+
+    def get_error_message(self) -> str:
+        """
+        Get the error message text if displayed.
+        
+        Returns:
+            str: The error message text, empty string if not present
+        """
+        if self.is_error_displayed():
+            return self.get_element_text(*self.ERROR_MESSAGE)
+        return ""

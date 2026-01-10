@@ -74,11 +74,13 @@ class ElementParser:
         # Parse selectors
         for sel_data in data.get('selectors', []):
             try:
-                selector_type = SelectorType(sel_data.get('type', 'css'))
+                # Try 'selector_type' first (from generated files), then 'type' (from templates)
+                selector_type_str = sel_data.get('selector_type') or sel_data.get('type', 'css')
+                selector_type = SelectorType(selector_type_str)
             except ValueError:
                 # Handle unknown selector types
                 selector_type = SelectorType.CSS
-                logger.warning(f"Unknown selector type: {sel_data.get('type')}")
+                logger.warning(f"Unknown selector type: {sel_data.get('selector_type') or sel_data.get('type')}")
             
             selector = ElementSelector(
                 selector_type=selector_type,
