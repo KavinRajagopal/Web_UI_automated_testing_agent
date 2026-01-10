@@ -1,7 +1,7 @@
 {
-  "session_id": "20260109_160655",
+  "session_id": "20260109_190359",
   "module_name": "saucedemo",
-  "created_at": "2026-01-09T16:18:11.830789",
+  "created_at": "2026-01-09T19:16:29.493048",
   "files_generated": [
     "base_page.py",
     "login_page.py",
@@ -23,7 +23,11 @@
   "checkpoints_summary": {
     "A": "passed",
     "B": "passed",
-    "C": "passed"
+    "C": "passed",
+    "D1": "passed",
+    "D2": "passed",
+    "D3": "passed",
+    "D4": "failed"
   },
   "selector_risks": [],
   "recommendations": [
@@ -32,6 +36,127 @@
     "Only 10/24 test cases were generated - review planning output"
   ],
   "llm_calls": 22,
-  "total_tokens": 84443,
+  "total_tokens": 84035,
+  "input_tokens": 44214,
+  "output_tokens": 39821,
+  "input_cost": 0.6632,
+  "output_cost": 2.9866,
+  "total_cost": 3.6498,
+  "model_id": "us.anthropic.claude-opus-4-5-20251101-v1:0",
+  "test_execution_results": {
+    "tests_passed": 9,
+    "tests_failed": 1,
+    "tests_errors": 0,
+    "test_error_details": {
+      "test_saucedemo.py::test_sort_products_by_name_a_to_z": {
+        "file": "test_saucedemo.py",
+        "test": "test_sort_products_by_name_a_to_z",
+        "error_type": "AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'",
+        "error_lines": [
+          "E   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'",
+          "E   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'",
+          "E   assert 'az' == 'Name (A to Z)'",
+          "E",
+          "E     - Name (A to Z)",
+          "E     + az"
+        ],
+        "full_traceback": [
+          "E   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'",
+          "E   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'",
+          "E   assert 'az' == 'Name (A to Z)'",
+          "E     ",
+          "E     - Name (A to Z)",
+          "E     + az",
+          "=========================== short test summary info ============================"
+        ]
+      }
+    }
+  },
+  "tests_passed_count": 9,
+  "tests_failed_count": 1,
+  "test_status": [
+    {
+      "test_name": "test_sort_products_by_name_a_to_z",
+      "file": "test_saucedemo.py",
+      "status": "failed",
+      "error_type": "AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'",
+      "error_summary": "E   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'\nE   AssertionError: Active sort option should be 'Name (A to Z)', but got 'az'\nE   assert 'az' == 'Name (A to Z)'\nE     \nE     - Name (A to Z)\nE     + az\n=========================== short test summary info ============================"
+    },
+    {
+      "test_name": "test_valid_login_with_standard_user",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_invalid_login_with_wrong_password",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_invalid_login_with_wrong_username",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_locked_out_user",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_empty_username",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_empty_password",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_both_fields_empty",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_special_characters_in_username",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_view_products_list_after_login",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    }
+  ],
+  "verification_errors": {
+    "D4": {
+      "status": "failed",
+      "files_failed": [
+        "test_execution"
+      ],
+      "error_count": 1,
+      "errors": {
+        "test_execution": "============================= test session starts ==============================\nplatform darwin -- Python 3.10.4, pytest-9.0.2, pluggy-1.6.0 -- /Users/kavinrajagopal/Desktop/Web_UI_automated_testing_agent/venv/bin/python\ncachedir: .pytest_cache\nrootdir: /Users/kavinrajagopal/Desktop/Web_UI_automated_testing_agent/output/saucedemo\nconfigfile: pytest.ini\ntestpaths: tests\nplugins: anyio-4.12.1, langsmith-0.6.1, allure-pytest-2.15.3\ncollecting ... collected 10 items\n\ntests/test_saucedemo.py::test_v"
+      }
+    }
+  },
   "duration_seconds": null
 }
