@@ -1,343 +1,247 @@
 """
 Cart Page Object Model for Sauce Demo application.
+Handles cart page interactions using Selenium WebDriver.
 """
 
-from typing import List
+from typing import List, Dict
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 from pages.base_page import BasePage
 
 
 class CartPage(BasePage):
-    """Page object for the Shopping Cart page."""
+    """Page object for the Cart page of Sauce Demo application."""
 
-    # Page URL
-    PAGE_URL = "/cart.html"
 
-    # Locators
-    PAGE_TITLE = (By.CSS_SELECTOR, "[data-test='title']")
-    CART_LIST = (By.CSS_SELECTOR, "[data-test='cart-list']")
-    CART_ITEM = (By.CSS_SELECTOR, "[data-test='inventory-item']")
-    CART_ITEM_NAME = (By.CSS_SELECTOR, "[data-test='inventory-item-name']")
-    CART_ITEM_DESC = (By.CSS_SELECTOR, "[data-test='inventory-item-desc']")
-    CART_ITEM_PRICE = (By.CSS_SELECTOR, "[data-test='inventory-item-price']")
-    CART_QUANTITY = (By.CSS_SELECTOR, "[data-test='item-quantity']")
-    REMOVE_BUTTON = (By.CSS_SELECTOR, "button[data-test^='remove-']")
-    CHECKOUT_BUTTON = (By.CSS_SELECTOR, "[data-test='checkout']")
-    CONTINUE_SHOPPING_BUTTON = (By.CSS_SELECTOR, "[data-test='continue-shopping']")
-    CART_BADGE = (By.CSS_SELECTOR, "[data-test='shopping-cart-badge']")
-
-    def __init__(self, driver):
-        """
-        Initialize the CartPage.
-
-        Args:
-            driver: Selenium WebDriver instance
-        """
-        super().__init__(driver)
-
-    # Element Getters
-    def get_page_title_element(self) -> WebElement:
-        """
-        Get the page title element.
-
-        Returns:
-            WebElement: The page title element
-        """
-        return self.find_element_visible(*self.PAGE_TITLE)
-
-    def get_cart_list_element(self) -> WebElement:
-        """
-        Get the cart list container element.
-
-        Returns:
-            WebElement: The cart list element
-        """
-        return self.find_element_visible(*self.CART_LIST)
-
-    def get_cart_item_elements(self) -> List[WebElement]:
-        """
-        Get all cart item elements.
-
-        Returns:
-            List[WebElement]: List of cart item elements
-        """
-        try:
-            self.find_element_visible(*self.CART_LIST)
-            return self.driver.find_elements(*self.CART_ITEM)
-        except Exception:
-            return []
-
-    def get_checkout_button_element(self) -> WebElement:
-        """
-        Get the checkout button element.
-
-        Returns:
-            WebElement: The checkout button element
-        """
-        return self.find_element_clickable(*self.CHECKOUT_BUTTON)
-
-    def get_continue_shopping_button_element(self) -> WebElement:
-        """
-        Get the continue shopping button element.
-
-        Returns:
-            WebElement: The continue shopping button element
-        """
-        return self.find_element_clickable(*self.CONTINUE_SHOPPING_BUTTON)
-
-    def get_cart_badge_element(self) -> WebElement:
-        """
-        Get the cart badge element showing item count.
-
-        Returns:
-            WebElement: The cart badge element
-        """
-        return self.find_element_visible(*self.CART_BADGE)
-
-    # Page State Methods
-    def is_on_cart_page(self) -> bool:
-        """
-        Check if the user is currently on the cart page.
-
-        Returns:
-            bool: True if on cart page, False otherwise
-        """
-        try:
-            current_url = self.driver.current_url
-            title_element = self.find_element_visible(*self.PAGE_TITLE)
-            return (
-                self.PAGE_URL in current_url
-                and title_element.text.lower() == "your cart"
-            )
-        except Exception:
-            return False
-
+    # Element Locators (auto-generated from metadata)
+    HEADER_CONTAINER = (By.ID, "header_container")
+    PRIMARY_HEADER = (By.CSS_SELECTOR, "[data-test='primary-header']")
+    REACT_BURGER_MENU_BTN = (By.ID, "react-burger-menu-btn")
+    OPEN_MENU = (By.CSS_SELECTOR, "[data-test='open-menu']")
+    SHOPPING_CART_LINK = (By.CSS_SELECTOR, "[data-test='shopping-cart-link']")
+    SECONDARY_HEADER = (By.CSS_SELECTOR, "[data-test='secondary-header']")
+    TITLE = (By.CSS_SELECTOR, "[data-test='title']")
+    ACTIVE_OPTION = (By.CSS_SELECTOR, "[data-test='active-option']")
+    PRODUCT_SORT_CONTAINER = (By.CSS_SELECTOR, "[data-test='product-sort-container']")
+    INVENTORY_CONTAINER = (By.ID, "inventory_container")
+    INVENTORY_LIST = (By.CSS_SELECTOR, "[data-test='inventory-list']")
+    INVENTORY_ITEM = (By.CSS_SELECTOR, "[data-test='inventory-item']")
+    ITEM_4_IMG_LINK = (By.ID, "item_4_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_BACKPACK_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-backpack-img']")
+    INVENTORY_ITEM_DESCRIPTION = (By.CSS_SELECTOR, "[data-test='inventory-item-description']")
+    ITEM_4_TITLE_LINK = (By.ID, "item_4_title_link")
+    INVENTORY_ITEM_NAME = (By.CSS_SELECTOR, "[data-test='inventory-item-name']")
+    INVENTORY_ITEM_DESC = (By.CSS_SELECTOR, "[data-test='inventory-item-desc']")
+    INVENTORY_ITEM_PRICE = (By.CSS_SELECTOR, "[data-test='inventory-item-price']")
+    ADD_TO_CART_SAUCE_LABS_BACKPACK = (By.ID, "add-to-cart-sauce-labs-backpack")
+    ITEM_0_IMG_LINK = (By.ID, "item_0_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_BIKE_LIGHT_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-bike-light-img']")
+    ITEM_0_TITLE_LINK = (By.ID, "item_0_title_link")
+    ADD_TO_CART_SAUCE_LABS_BIKE_LIGHT = (By.ID, "add-to-cart-sauce-labs-bike-light")
+    ITEM_1_IMG_LINK = (By.ID, "item_1_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_BOLT_T_SHIRT_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-bolt-t-shirt-img']")
+    ITEM_1_TITLE_LINK = (By.ID, "item_1_title_link")
+    ADD_TO_CART_SAUCE_LABS_BOLT_T_SHIRT = (By.ID, "add-to-cart-sauce-labs-bolt-t-shirt")
+    ITEM_5_IMG_LINK = (By.ID, "item_5_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_FLEECE_JACKET_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-fleece-jacket-img']")
+    ITEM_5_TITLE_LINK = (By.ID, "item_5_title_link")
+    ADD_TO_CART_SAUCE_LABS_FLEECE_JACKET = (By.ID, "add-to-cart-sauce-labs-fleece-jacket")
+    ITEM_2_IMG_LINK = (By.ID, "item_2_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_ONESIE_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-onesie-img']")
+    ITEM_2_TITLE_LINK = (By.ID, "item_2_title_link")
+    ADD_TO_CART_SAUCE_LABS_ONESIE = (By.ID, "add-to-cart-sauce-labs-onesie")
+    ITEM_3_IMG_LINK = (By.ID, "item_3_img_link")
+    INVENTORY_ITEM_TEST_ALLTHETHINGS__T_SHIRT__RED__IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-test.allthethings()-t-shirt-(red)-img']")
+    ITEM_3_TITLE_LINK = (By.ID, "item_3_title_link")
+    ADD_TO_CART_TEST_ALLTHETHINGS__T_SHIRT__RED = (By.ID, "add-to-cart-test.allthethings()-t-shirt-(red)")
+    FOOTER = (By.CSS_SELECTOR, "[data-test='footer']")
+    SOCIAL_TWITTER = (By.CSS_SELECTOR, "[data-test='social-twitter']")
+    SOCIAL_FACEBOOK = (By.CSS_SELECTOR, "[data-test='social-facebook']")
+    SOCIAL_LINKEDIN = (By.CSS_SELECTOR, "[data-test='social-linkedin']")
+    FOOTER_COPY = (By.CSS_SELECTOR, "[data-test='footer-copy']")
     def is_page_loaded(self) -> bool:
         """
-        Check if the cart page is fully loaded.
-
+        Check if the cart page is loaded by verifying required elements are present.
+        
         Returns:
-            bool: True if page is loaded, False otherwise
+            bool: True if the page is loaded, False otherwise.
         """
-        return self.is_on_cart_page()
-
-    def is_title_displayed(self) -> bool:
-        """
-        Check if the page title is displayed.
-
-        Returns:
-            bool: True if title is displayed, False otherwise
-        """
-        return self.is_element_present(*self.PAGE_TITLE)
-
-    def get_title_text(self) -> str:
-        """
-        Get the page title text.
-
-        Returns:
-            str: The page title text
-        """
-        return self.get_element_text(*self.PAGE_TITLE)
-
-    def get_page_title(self) -> str:
-        """
-        Get the page title text (alias for get_title_text).
-
-        Returns:
-            str: The page title text
-        """
-        return self.get_title_text()
+        return self.is_element_present(*self.HEADER_CONTAINER, timeout=10)
 
     def is_on_page(self) -> bool:
         """
-        Verify the user is on the cart page.
-
+        Alias for is_page_loaded() to check if on the cart page.
+        
         Returns:
-            bool: True if on cart page, False otherwise
+            bool: True if on the cart page, False otherwise.
         """
-        return self.is_on_cart_page()
+        return self.is_page_loaded()
 
-    # Cart Item Methods
-    def get_cart_items(self) -> List[dict]:
+    def is_cart_page_displayed(self) -> bool:
         """
-        Get all items in the cart with their details.
-
+        Check if the cart page is displayed.
+        
         Returns:
-            List[dict]: List of dictionaries containing item details
-                       (name, description, price, quantity)
+            bool: True if cart page is displayed, False otherwise.
+        """
+        return self.is_page_loaded() and self.is_element_present(*self.TITLE, timeout=5)
+
+    def get_page_title(self) -> str:
+        """
+        Get the title of the cart page.
+        
+        Returns:
+            str: The page title text.
+        """
+        return self.get_element_text(*self.TITLE)
+
+    def get_cart_items(self) -> List[Dict[str, str]]:
+        """
+        Get all items currently in the cart.
+        
+        Returns:
+            List[Dict[str, str]]: List of dictionaries containing item details
+                                  (name, description, price).
         """
         items = []
-        cart_item_elements = self.get_cart_item_elements()
-
-        for item_element in cart_item_elements:
-            try:
-                name = item_element.find_element(*self.CART_ITEM_NAME).text
-                description = item_element.find_element(*self.CART_ITEM_DESC).text
-                price = item_element.find_element(*self.CART_ITEM_PRICE).text
-                quantity = item_element.find_element(*self.CART_QUANTITY).text
-
-                items.append({
-                    "name": name,
-                    "description": description,
-                    "price": price,
-                    "quantity": quantity,
-                    "element": item_element
-                })
-            except Exception:
-                continue
-
+        try:
+            # Find all inventory items in the cart
+            item_elements = self.driver.find_elements(*self.INVENTORY_ITEM)
+            
+            for item in item_elements:
+                item_data = {}
+                try:
+                    # Get item name
+                    name_element = item.find_element(By.CLASS_NAME, "inventory_item_name")
+                    item_data["name"] = name_element.text
+                except:
+                    item_data["name"] = ""
+                
+                try:
+                    # Get item description
+                    desc_element = item.find_element(By.CLASS_NAME, "inventory_item_desc")
+                    item_data["description"] = desc_element.text
+                except:
+                    item_data["description"] = ""
+                
+                try:
+                    # Get item price
+                    price_element = item.find_element(By.CLASS_NAME, "inventory_item_price")
+                    item_data["price"] = price_element.text
+                except:
+                    item_data["price"] = ""
+                
+                items.append(item_data)
+        except:
+            pass
+        
         return items
 
     def get_cart_item_count(self) -> int:
         """
         Get the number of items in the cart.
-
+        
         Returns:
-            int: Number of items in cart
-        """
-        return len(self.get_cart_item_elements())
-
-    def get_cart_badge_count(self) -> int:
-        """
-        Get the count displayed on the cart badge.
-
-        Returns:
-            int: The count from cart badge, 0 if not present
+            int: Number of items in the cart.
         """
         try:
-            badge_text = self.get_element_text(*self.CART_BADGE)
-            return int(badge_text)
-        except Exception:
+            item_elements = self.driver.find_elements(*self.INVENTORY_ITEM)
+            return len(item_elements)
+        except:
             return 0
 
-    def is_cart_empty(self) -> bool:
+    def remove_item_from_cart(self, item_name: str) -> bool:
         """
-        Check if the cart is empty.
-
-        Returns:
-            bool: True if cart is empty, False otherwise
-        """
-        return self.get_cart_item_count() == 0
-
-    def remove_item(self, item_name: str) -> bool:
-        """
-        Remove an item from the cart by its name.
-
+        Remove a specific item from the cart by its name.
+        
         Args:
-            item_name: The name of the item to remove
-
+            item_name: The name of the item to remove.
+            
         Returns:
-            bool: True if item was removed, False otherwise
+            bool: True if item was removed successfully, False otherwise.
         """
-        cart_items = self.get_cart_items()
-
-        for item in cart_items:
-            if item["name"] == item_name:
+        try:
+            # Find all inventory items
+            item_elements = self.driver.find_elements(*self.INVENTORY_ITEM)
+            
+            for item in item_elements:
                 try:
-                    remove_button = item["element"].find_element(*self.REMOVE_BUTTON)
-                    remove_button.click()
-                    return True
-                except Exception:
-                    return False
+                    name_element = item.find_element(By.CLASS_NAME, "inventory_item_name")
+                    if name_element.text.lower() == item_name.lower():
+                        # Find and click the remove button within this item
+                        remove_button = item.find_element(By.CSS_SELECTOR, "button[id^='remove-']")
+                        remove_button.click()
+                        return True
+                except:
+                    continue
+            return False
+        except:
+            return False
 
-        return False
-
-    def remove_item_by_index(self, index: int) -> bool:
-        """
-        Remove an item from the cart by its index.
-
-        Args:
-            index: The index of the item to remove (0-based)
-
-        Returns:
-            bool: True if item was removed, False otherwise
-        """
-        cart_item_elements = self.get_cart_item_elements()
-
-        if 0 <= index < len(cart_item_elements):
-            try:
-                remove_button = cart_item_elements[index].find_element(*self.REMOVE_BUTTON)
-                remove_button.click()
-                return True
-            except Exception:
-                return False
-
-        return False
-
-    def remove_all_items(self) -> None:
-        """
-        Remove all items from the cart.
-        """
-        while not self.is_cart_empty():
-            self.remove_item_by_index(0)
-
-    def get_item_by_name(self, item_name: str) -> dict:
-        """
-        Get item details by name.
-
-        Args:
-            item_name: The name of the item to find
-
-        Returns:
-            dict: Item details or empty dict if not found
-        """
-        cart_items = self.get_cart_items()
-
-        for item in cart_items:
-            if item["name"] == item_name:
-                return item
-
-        return {}
-
-    def is_item_in_cart(self, item_name: str) -> bool:
-        """
-        Check if an item is in the cart.
-
-        Args:
-            item_name: The name of the item to check
-
-        Returns:
-            bool: True if item is in cart, False otherwise
-        """
-        return bool(self.get_item_by_name(item_name))
-
-    # Navigation Methods
     def click_checkout(self) -> None:
         """
         Click the checkout button to proceed to checkout.
         """
-        self.click(*self.CHECKOUT_BUTTON)
+        checkout_locator = (By.ID, "checkout")
+        self.click(*checkout_locator)
 
     def click_continue_shopping(self) -> None:
         """
         Click the continue shopping button to return to inventory.
         """
-        self.click(*self.CONTINUE_SHOPPING_BUTTON)
+        continue_shopping_locator = (By.ID, "continue-shopping")
+        self.click(*continue_shopping_locator)
 
-    # Element State Methods
-    def is_checkout_button_enabled(self) -> bool:
+    def is_item_in_cart(self, item_name: str) -> bool:
         """
-        Check if the checkout button is enabled.
-
+        Check if a specific item is in the cart.
+        
+        Args:
+            item_name: The name of the item to check for.
+            
         Returns:
-            bool: True if enabled, False otherwise
+            bool: True if item is in cart, False otherwise.
         """
-        try:
-            button = self.get_checkout_button_element()
-            return button.is_enabled()
-        except Exception:
-            return False
+        cart_items = self.get_cart_items()
+        for item in cart_items:
+            if item.get("name", "").lower() == item_name.lower():
+                return True
+        return False
 
-    def is_continue_shopping_button_enabled(self) -> bool:
+    def click_shopping_cart(self) -> None:
         """
-        Check if the continue shopping button is enabled.
+        Click the shopping cart link in the header.
+        """
+        self.click(*self.SHOPPING_CART_LINK)
 
+    def open_menu(self) -> None:
+        """
+        Open the burger menu.
+        """
+        self.click(*self.REACT_BURGER_MENU_BTN)
+
+    def click_twitter_link(self) -> None:
+        """
+        Click the Twitter social media link in the footer.
+        """
+        self.click(*self.SOCIAL_TWITTER)
+
+    def click_facebook_link(self) -> None:
+        """
+        Click the Facebook social media link in the footer.
+        """
+        self.click(*self.SOCIAL_FACEBOOK)
+
+    def click_linkedin_link(self) -> None:
+        """
+        Click the LinkedIn social media link in the footer.
+        """
+        self.click(*self.SOCIAL_LINKEDIN)
+
+    def get_footer_text(self) -> str:
+        """
+        Get the footer copyright text.
+        
         Returns:
-            bool: True if enabled, False otherwise
+            str: The footer copyright text.
         """
-        try:
-            button = self.get_continue_shopping_button_element()
-            return button.is_enabled()
-        except Exception:
-            return False
+        return self.get_element_text(*self.FOOTER_COPY)

@@ -90,21 +90,22 @@ class ElementParser:
             )
             selectors.append(selector)
         
-        # Also check for shorthand selectors (id, name, css, xpath as direct keys)
-        for key in ['id', 'name', 'css', 'xpath', 'data-testid', 'aria-label']:
+        # Also check for shorthand selectors as direct keys
+        # NOTE: 'name' is excluded because it's always the element name property, not a selector
+        for key in ['id', 'css', 'xpath', 'data-testid', 'data-test', 'aria-label']:
             if key in data and data[key]:
                 try:
                     selector_type = SelectorType(key)
                 except ValueError:
                     continue
-                
+
                 # Check if we already have this selector
                 existing = [s for s in selectors if s.selector_type == selector_type]
                 if not existing:
                     selector = ElementSelector(
                         selector_type=selector_type,
                         value=data[key],
-                        confidence=1.0 if key in ['id', 'data-testid'] else 0.8,
+                        confidence=1.0 if key in ['id', 'data-testid', 'data-test'] else 0.8,
                         is_stable=key not in ['xpath']
                     )
                     selectors.append(selector)

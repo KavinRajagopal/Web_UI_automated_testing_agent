@@ -1,28 +1,28 @@
 {
   "page_name": "CartPage",
-  "page_url": "https://www.saucedemo.com/inventory.html",
+  "page_url": "https://www.saucedemo.com/cart.html",
   "description": "SauceDemo shopping cart page",
   "elements": [
     {
       "name": "header-container",
-      "description": "Open Menu\nSwag Labs\nProducts\nName (A to Z)\nName (A to Z)\nName (Z to A)\nPrice (low to high)\nPrice (hi",
+      "description": "Page header container",
       "element_type": "element",
       "selectors": [
-        {
-          "selector_type": "data-testid",
-          "value": "header-container",
-          "confidence": 0.98,
-          "is_stable": true
-        },
         {
           "selector_type": "id",
           "value": "header_container",
           "confidence": 0.95,
           "is_stable": true
+        },
+        {
+          "selector_type": "data-test",
+          "value": "header-container",
+          "confidence": 0.98,
+          "is_stable": true
         }
       ],
-      "is_required": false,
-      "wait_strategy": "clickable"
+      "is_required": true,
+      "wait_strategy": "visible"
     },
     {
       "name": "primary-header",
@@ -30,7 +30,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "primary-header",
           "confidence": 0.98,
           "is_stable": true
@@ -51,7 +51,7 @@
           "is_stable": true
         }
       ],
-      "is_required": true,
+      "is_required": false,
       "wait_strategy": "clickable"
     },
     {
@@ -60,7 +60,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "open-menu",
           "confidence": 0.98,
           "is_stable": true
@@ -75,7 +75,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "shopping-cart-link",
           "confidence": 0.98,
           "is_stable": true
@@ -90,7 +90,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "secondary-header",
           "confidence": 0.98,
           "is_stable": true
@@ -105,7 +105,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "title",
           "confidence": 0.98,
           "is_stable": true
@@ -120,7 +120,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "active-option",
           "confidence": 0.98,
           "is_stable": true
@@ -135,7 +135,7 @@
       "element_type": "select",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "product-sort-container",
           "confidence": 0.98,
           "is_stable": true
@@ -150,7 +150,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-container",
           "confidence": 0.98,
           "is_stable": true
@@ -171,7 +171,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-list",
           "confidence": 0.98,
           "is_stable": true
@@ -186,7 +186,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item",
           "confidence": 0.98,
           "is_stable": true
@@ -201,7 +201,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-4-img-link",
           "confidence": 0.98,
           "is_stable": true
@@ -222,7 +222,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-sauce-labs-backpack-img",
           "confidence": 0.98,
           "is_stable": true
@@ -237,7 +237,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-description",
           "confidence": 0.98,
           "is_stable": true
@@ -252,7 +252,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-4-title-link",
           "confidence": 0.98,
           "is_stable": true
@@ -273,7 +273,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-name",
           "confidence": 0.98,
           "is_stable": true
@@ -288,7 +288,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-desc",
           "confidence": 0.98,
           "is_stable": true
@@ -303,7 +303,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-price",
           "confidence": 0.98,
           "is_stable": true
@@ -318,15 +318,15 @@
       "element_type": "button",
       "selectors": [
         {
-          "selector_type": "data-testid",
-          "value": "add-to-cart-sauce-labs-backpack",
-          "confidence": 0.98,
-          "is_stable": true
-        },
-        {
           "selector_type": "id",
           "value": "add-to-cart-sauce-labs-backpack",
           "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "data-test",
+          "value": "add-to-cart-sauce-labs-backpack",
+          "confidence": 0.98,
           "is_stable": true
         },
         {
@@ -336,7 +336,7 @@
           "is_stable": true
         }
       ],
-      "is_required": true,
+      "is_required": false,
       "wait_strategy": "clickable"
     },
     {
@@ -345,7 +345,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-0-img-link",
           "confidence": 0.98,
           "is_stable": true
@@ -366,7 +366,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-sauce-labs-bike-light-img",
           "confidence": 0.98,
           "is_stable": true
@@ -381,7 +381,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-0-title-link",
           "confidence": 0.98,
           "is_stable": true
@@ -402,15 +402,15 @@
       "element_type": "button",
       "selectors": [
         {
-          "selector_type": "data-testid",
-          "value": "add-to-cart-sauce-labs-bike-light",
-          "confidence": 0.98,
-          "is_stable": true
-        },
-        {
           "selector_type": "id",
           "value": "add-to-cart-sauce-labs-bike-light",
           "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "data-test",
+          "value": "add-to-cart-sauce-labs-bike-light",
+          "confidence": 0.98,
           "is_stable": true
         },
         {
@@ -420,7 +420,7 @@
           "is_stable": true
         }
       ],
-      "is_required": true,
+      "is_required": false,
       "wait_strategy": "clickable"
     },
     {
@@ -429,7 +429,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-1-img-link",
           "confidence": 0.98,
           "is_stable": true
@@ -450,7 +450,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-sauce-labs-bolt-t-shirt-img",
           "confidence": 0.98,
           "is_stable": true
@@ -465,7 +465,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-1-title-link",
           "confidence": 0.98,
           "is_stable": true
@@ -486,15 +486,15 @@
       "element_type": "button",
       "selectors": [
         {
-          "selector_type": "data-testid",
-          "value": "add-to-cart-sauce-labs-bolt-t-shirt",
-          "confidence": 0.98,
-          "is_stable": true
-        },
-        {
           "selector_type": "id",
           "value": "add-to-cart-sauce-labs-bolt-t-shirt",
           "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "data-test",
+          "value": "add-to-cart-sauce-labs-bolt-t-shirt",
+          "confidence": 0.98,
           "is_stable": true
         },
         {
@@ -504,7 +504,7 @@
           "is_stable": true
         }
       ],
-      "is_required": true,
+      "is_required": false,
       "wait_strategy": "clickable"
     },
     {
@@ -513,7 +513,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-5-img-link",
           "confidence": 0.98,
           "is_stable": true
@@ -534,7 +534,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-sauce-labs-fleece-jacket-img",
           "confidence": 0.98,
           "is_stable": true
@@ -549,7 +549,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-5-title-link",
           "confidence": 0.98,
           "is_stable": true
@@ -570,15 +570,15 @@
       "element_type": "button",
       "selectors": [
         {
-          "selector_type": "data-testid",
-          "value": "add-to-cart-sauce-labs-fleece-jacket",
-          "confidence": 0.98,
-          "is_stable": true
-        },
-        {
           "selector_type": "id",
           "value": "add-to-cart-sauce-labs-fleece-jacket",
           "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "data-test",
+          "value": "add-to-cart-sauce-labs-fleece-jacket",
+          "confidence": 0.98,
           "is_stable": true
         },
         {
@@ -588,7 +588,7 @@
           "is_stable": true
         }
       ],
-      "is_required": true,
+      "is_required": false,
       "wait_strategy": "clickable"
     },
     {
@@ -597,7 +597,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-2-img-link",
           "confidence": 0.98,
           "is_stable": true
@@ -618,7 +618,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-sauce-labs-onesie-img",
           "confidence": 0.98,
           "is_stable": true
@@ -633,7 +633,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-2-title-link",
           "confidence": 0.98,
           "is_stable": true
@@ -654,15 +654,15 @@
       "element_type": "button",
       "selectors": [
         {
-          "selector_type": "data-testid",
-          "value": "add-to-cart-sauce-labs-onesie",
-          "confidence": 0.98,
-          "is_stable": true
-        },
-        {
           "selector_type": "id",
           "value": "add-to-cart-sauce-labs-onesie",
           "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "data-test",
+          "value": "add-to-cart-sauce-labs-onesie",
+          "confidence": 0.98,
           "is_stable": true
         },
         {
@@ -672,7 +672,7 @@
           "is_stable": true
         }
       ],
-      "is_required": true,
+      "is_required": false,
       "wait_strategy": "clickable"
     },
     {
@@ -681,7 +681,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-3-img-link",
           "confidence": 0.98,
           "is_stable": true
@@ -702,7 +702,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "inventory-item-test.allthethings()-t-shirt-(red)-img",
           "confidence": 0.98,
           "is_stable": true
@@ -717,7 +717,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "item-3-title-link",
           "confidence": 0.98,
           "is_stable": true
@@ -738,15 +738,15 @@
       "element_type": "button",
       "selectors": [
         {
-          "selector_type": "data-testid",
-          "value": "add-to-cart-test.allthethings()-t-shirt-(red)",
-          "confidence": 0.98,
-          "is_stable": true
-        },
-        {
           "selector_type": "id",
           "value": "add-to-cart-test.allthethings()-t-shirt-(red)",
           "confidence": 0.95,
+          "is_stable": true
+        },
+        {
+          "selector_type": "data-test",
+          "value": "add-to-cart-test.allthethings()-t-shirt-(red)",
+          "confidence": 0.98,
           "is_stable": true
         },
         {
@@ -756,7 +756,7 @@
           "is_stable": true
         }
       ],
-      "is_required": true,
+      "is_required": false,
       "wait_strategy": "clickable"
     },
     {
@@ -765,7 +765,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "footer",
           "confidence": 0.98,
           "is_stable": true
@@ -780,7 +780,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "social-twitter",
           "confidence": 0.98,
           "is_stable": true
@@ -795,7 +795,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "social-facebook",
           "confidence": 0.98,
           "is_stable": true
@@ -810,7 +810,7 @@
       "element_type": "link",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "social-linkedin",
           "confidence": 0.98,
           "is_stable": true
@@ -825,7 +825,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "footer-copy",
           "confidence": 0.98,
           "is_stable": true

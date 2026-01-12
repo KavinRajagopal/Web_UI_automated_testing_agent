@@ -57,37 +57,41 @@ class AgentState(TypedDict, total=False):
     """Run tests in headless mode (default: True)"""
     
     # =========================================================================
-    # INPUTS (populated by onboarding node)
+    # INPUTS (populated by analyze_inputs node)
     # =========================================================================
-    
+
     module_spec: Dict[str, Any]
     """Parsed module_spec.json as dict"""
-    
+
     test_cases: List[Dict[str, Any]]
-    """Parsed test case rows from CSV"""
-    
+    """Parsed test case rows from CSV (all test cases)"""
+
     page_metadata: Dict[str, Dict[str, Any]]
     """Map of page_name -> PageMetadata dict"""
-    
+
     # Validation results
     input_validation_errors: List[str]
-    """Any validation errors found during onboarding"""
-    
+    """Any validation errors found during input analysis"""
+
     input_validation_warnings: List[str]
     """Any validation warnings"""
-    
-    # Input generation tracking (for auto-generation)
-    inputs_generated: bool
-    """Whether inputs were auto-generated (vs pre-existing)"""
-    
-    generated_elements: bool
-    """Whether element metadata was auto-generated"""
-    
-    generated_testcases: bool
-    """Whether test cases were auto-generated"""
-    
-    needs_input_review: bool
-    """Whether generated inputs need human review"""
+
+    # =========================================================================
+    # ANALYSIS (populated by analyze_inputs node)
+    # =========================================================================
+
+    analysis_summary: Dict[str, Any]
+    """CSV analysis results: duplicates, priorities, selected tests, suggestions"""
+
+    approved_tests: List[Dict[str, Any]]
+    """Final approved test cases after human gate (max 10)"""
+
+    # =========================================================================
+    # EVENT LOG (populated throughout execution)
+    # =========================================================================
+
+    event_log: List[Dict[str, Any]]
+    """Structured event log for tracing agent execution"""
     
     # =========================================================================
     # PLANNING (populated by planning node)
@@ -199,7 +203,7 @@ def create_initial_state(
     output_path: str,
     llm_model_id: str = "us.anthropic.claude-opus-4-5-20251101-v1:0",
     llm_region: str = "us-east-2",
-    llm_profile: str = "bedrock-user",
+    llm_profile: str = "default",
     max_recovery_attempts: int = 3,
     enable_allure: bool = False,
     headless_mode: bool = True
@@ -236,10 +240,13 @@ def create_initial_state(
         page_metadata={},
         input_validation_errors=[],
         input_validation_warnings=[],
-        inputs_generated=False,
-        generated_elements=False,
-        generated_testcases=False,
-        needs_input_review=False,
+
+        # Analysis (will be populated)
+        analysis_summary={},
+        approved_tests=[],
+
+        # Event log
+        event_log=[],
         
         # Planning (will be populated)
         generation_plan={},

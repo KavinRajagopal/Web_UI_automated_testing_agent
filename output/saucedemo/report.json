@@ -1,0 +1,135 @@
+{
+  "session_id": "20260111_222039",
+  "module_name": "saucedemo",
+  "created_at": "2026-01-11T22:27:45.614497",
+  "files_generated": [
+    "base_page.py",
+    "login_page.py",
+    "products_page.py",
+    "cart_page.py",
+    "__init__.py",
+    "auth_flow.py",
+    "products_flow.py",
+    "__init__.py",
+    "test_saucedemo.py",
+    "conftest.py",
+    "pytest.ini",
+    "__init__.py"
+  ],
+  "tests_generated": 10,
+  "pages_generated": 3,
+  "flows_generated": 2,
+  "verification_passed": false,
+  "checkpoints_summary": {
+    "A_syntax": "passed",
+    "B_imports": "passed",
+    "C_collection": "passed",
+    "D_execution": "failed"
+  },
+  "selector_risks": [],
+  "recommendations": [
+    "Review and fix verification failures before running tests",
+    "Code required 5 recovery attempts - review generated code quality",
+    "Only 10/32 test cases were generated - review planning output"
+  ],
+  "llm_calls": 21,
+  "total_tokens": 94018,
+  "input_tokens": 52966,
+  "output_tokens": 41052,
+  "input_cost": 0.7945,
+  "output_cost": 3.0789,
+  "total_cost": 3.8734,
+  "model_id": "us.anthropic.claude-opus-4-5-20251101-v1:0",
+  "test_execution_results": {
+    "tests_passed": 0,
+    "tests_failed": 1
+  },
+  "tests_passed_count": 10,
+  "tests_failed_count": 0,
+  "test_status": [
+    {
+      "test_name": "test_valid_login_with_standard_user",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_invalid_login_with_wrong_password",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_invalid_login_with_wrong_username",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_locked_out_user_fails",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_empty_username",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_empty_password",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_both_fields_empty",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_login_with_special_characters_in_username",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_view_products_list_after_login",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    },
+    {
+      "test_name": "test_sort_products_by_name_a_to_z",
+      "file": "tests/test_saucedemo.py",
+      "status": "passed",
+      "error_type": null,
+      "error_summary": null
+    }
+  ],
+  "verification_errors": {
+    "D": {
+      "status": "failed",
+      "files_failed": [
+        "tests/test_saucedemo.py"
+      ],
+      "error_count": 1,
+      "errors": {
+        "tests/test_saucedemo.py": "selenium.common.exceptions.TimeoutException: Message:"
+      }
+    }
+  },
+  "duration_seconds": null,
+  "markdown_summary": "# Test Generation Report\n\n**Module:** saucedemo\n**Session ID:** 20260111_222039\n**Created:** 2026-01-11 22:27:45.614497\n\n---\n\n## Summary\n\n- **Tests Generated:** 10\n- **Pages Generated:** 3\n- **Flows Generated:** 2\n- **Verification Status:** \u274c FAILED\n\n## Verification Checkpoints\n\n- \u2705 **Checkpoint A_syntax:** PASSED\n- \u2705 **Checkpoint B_imports:** PASSED\n- \u2705 **Checkpoint C_collection:** PASSED\n- \u274c **Checkpoint D_execution:** FAILED\n\n## Test Execution Results\n\n- **Tests Passed:** 10\n- **Tests Failed:** 0\n\n### Test Status\n\n- \u2705 test_valid_login_with_standard_user: passed\n- \u2705 test_invalid_login_with_wrong_password: passed\n- \u2705 test_invalid_login_with_wrong_username: passed\n- \u2705 test_login_with_locked_out_user_fails: passed\n- \u2705 test_login_with_empty_username: passed\n- \u2705 test_login_with_empty_password: passed\n- \u2705 test_login_with_both_fields_empty: passed\n- \u2705 test_login_with_special_characters_in_username: passed\n- \u2705 test_view_products_list_after_login: passed\n- \u2705 test_sort_products_by_name_a_to_z: passed\n\n## Recommendations\n\n1. Review and fix verification failures before running tests\n2. Code required 5 recovery attempts - review generated code quality\n3. Only 10/32 test cases were generated - review planning output\n\n## Cost Analysis\n\n- **Total Cost:** $3.8734\n  - Input tokens: 52,966 ($0.7945)\n  - Output tokens: 41,052 ($3.0789)\n- **Model:** us.anthropic.claude-opus-4-5-20251101-v1:0\n- **LLM Calls:** 21\n"
+}

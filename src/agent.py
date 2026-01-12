@@ -1,7 +1,7 @@
-"""Main Agent - LangGraph wiring for the Web UI Test Generation Agent.
+"""Main Agent - Simplified LangGraph wiring for the Web UI Test Generation Agent.
 
-This module wires all nodes together into a LangGraph StateGraph
-and provides the main entry point for running the agent.
+Simplified 7-node graph:
+    analyze_inputs -> human_gate -> planning -> generation -> verification -> recovery -> reporting
 
 Supports:
 - LangSmith tracing (set LANGCHAIN_TRACING_V2=true)
@@ -13,20 +13,14 @@ import logging
 import os
 import sys
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Literal
 
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 
 from .models.state import AgentState, create_initial_state
-from .nodes.onboarding import onboarding_node
-from .nodes.human_gates import (
-    human_gate_test_cases,
-    human_gate_inputs,
-    human_gate_plan,
-    human_gate_final,
-    skip_human_gate
-)
+from .nodes.onboarding import analyze_inputs_node
+from .nodes.human_gates import human_gate_node, skip_human_gate
 from .nodes.planning import planning_node
 from .nodes.generation import generation_node
 from .nodes.verification.verification_node import verification_node
@@ -46,99 +40,30 @@ logger = logging.getLogger(__name__)
 # ROUTING FUNCTIONS
 # =============================================================================
 
-def route_after_onboarding(state: AgentState) -> str:
-    """Determine next node after onboarding."""
-    # Check for critical errors
-    if state.get("input_validation_errors"):
-        logger.error("Onboarding failed with errors")
-        return END
-    
-    # Check if test case modifications are needed (duplicates/suggestions)
-    if state.get("needs_test_case_review", False):
-        return "human_gate_test_cases"
-    
-    # Check if inputs need review
-    if state.get("needs_input_review", False):
-        return "human_gate_inputs"
-    
-    # Skip to planning if inputs are pre-validated
-    return "planning"
-
-
-def route_after_test_case_review(state: AgentState) -> str:
-    """Determine next node after test case review."""
-    if state.get("test_case_modifications_approved", False):
-        # TODO: Apply modifications if approved
-        # For now, continue to planning
-        return "planning"
-    else:
-        # Continue with original test cases
-        return "planning"
-
-
-def route_after_input_review(state: AgentState) -> str:
-    """Determine next node after input review."""
+def route_after_human_gate(state: AgentState) -> str:
+    """Determine next node after human gate."""
     if state.get("plan_approved", False):
         return "planning"
     else:
-        logger.info("Inputs not approved - ending")
+        logger.info("Human gate rejected - ending")
         return END
-
-
-def route_after_plan_review(state: AgentState) -> str:
-    """Determine next node after plan review."""
-    if state.get("plan_approved", False):
-        return "generation"
-    elif state.get("plan_revision_count", 0) < 3:
-        # Allow re-planning with feedback
-        return "planning"
-    else:
-        logger.info("Plan not approved after max revisions - ending")
-        return END
-
-
-def route_after_generation(state: AgentState) -> str:
-    """Determine next node after generation."""
-    # If generation detected errors during incremental verification, route directly to recovery
-    if state.get("needs_recovery", False):
-        recovery_stage = state.get("recovery_stage")
-        if recovery_stage:
-            logger.info(f"Generation detected Stage {recovery_stage} errors - routing directly to recovery")
-            return "recovery"
-    
-    # If generation is complete, go to verification for final check
-    if state.get("generation_complete", False):
-        return "verification"
-    
-    # Default: go to verification (for final check after all stages)
-    return "verification"
 
 
 def route_after_verification(state: AgentState) -> str:
     """Determine next node after verification."""
     if state.get("verification_passed", False):
-        return "human_gate_final"
+        return "reporting"
     elif should_retry_verification(state):
         return "recovery"
     else:
-        return "human_gate_final"
+        return "reporting"
 
 
 def route_after_recovery(state: AgentState) -> str:
     """Determine next node after recovery."""
     if state.get("needs_human_intervention", False):
-        return "human_gate_final"
-    
-    # Check if this is incremental recovery (stage-specific)
-    recovery_stage = state.get("recovery_stage", None)
-    if recovery_stage:
-        # Route back to generation to re-verify the specific stage
-        logger.info(f"Routing back to generation for Stage {recovery_stage} re-verification")
-        state["needs_recovery"] = False  # Clear flag so generation can re-verify
-        return "generation"
-    else:
-        # Final verification after all stages complete
-        return "verification"
+        return "reporting"
+    return "verification"
 
 
 # =============================================================================
@@ -147,135 +72,90 @@ def route_after_recovery(state: AgentState) -> str:
 
 def build_agent_graph(auto_approve: bool = False, checkpointer=None) -> StateGraph:
     """
-    Build the LangGraph StateGraph for the agent.
-    
+    Build the simplified LangGraph StateGraph.
+
     Args:
         auto_approve: If True, skip human gates (for batch mode)
         checkpointer: Optional checkpointer for state persistence
-        
+
     Returns:
         Compiled StateGraph
-        
-    Graph Structure:
-        onboarding → [human_gate_inputs] → planning → human_gate_plan
-                                                           ↓
-                        ┌─────────────────────────── generation
-                        │                                  ↓
-                        │                           verification
-                        │                          ↙           ↘
-                        │                   (pass)              (fail)
-                        │                      ↓                  ↓
-                        │             human_gate_final ←─── recovery
-                        │                      ↓                  │
-                        │                  reporting              │
-                        │                      ↓                  │
-                        └─────────────────── END ←────────────────┘
-                                                    (max 3 retries)
+
+    Graph Structure (7 nodes):
+        analyze_inputs -> human_gate -> planning -> generation
+                              |                         |
+                              |                    verification
+                              |                    /          \\
+                              |             (pass)            (fail)
+                              |                |                 |
+                              |           reporting <------- recovery
+                              |                |                 |
+                              +-----> END <----+  (max 3 retries)
     """
     # Create graph with AgentState
     graph = StateGraph(AgentState)
-    
+
     # Add nodes
-    graph.add_node("onboarding", onboarding_node)
-    
+    graph.add_node("analyze_inputs", analyze_inputs_node)
+
     if auto_approve:
-        graph.add_node("human_gate_test_cases",
-                       lambda s: skip_human_gate(s, "human_gate_test_cases"))
-        graph.add_node("human_gate_inputs", 
-                       lambda s: skip_human_gate(s, "human_gate_inputs"))
-        graph.add_node("human_gate_plan",
-                       lambda s: skip_human_gate(s, "human_gate_plan"))
-        graph.add_node("human_gate_final",
-                       lambda s: skip_human_gate(s, "human_gate_final"))
+        graph.add_node("human_gate", lambda s: skip_human_gate(s, "human_gate"))
     else:
-        graph.add_node("human_gate_test_cases", human_gate_test_cases)
-        graph.add_node("human_gate_inputs", human_gate_inputs)
-        graph.add_node("human_gate_plan", human_gate_plan)
-        graph.add_node("human_gate_final", human_gate_final)
-    
+        graph.add_node("human_gate", human_gate_node)
+
     graph.add_node("planning", planning_node)
     graph.add_node("generation", generation_node)
     graph.add_node("verification", verification_node)
     graph.add_node("recovery", recovery_node)
     graph.add_node("reporting", reporting_node)
-    
+
     # Set entry point
-    graph.set_entry_point("onboarding")
-    
-    # Add conditional edges
+    graph.set_entry_point("analyze_inputs")
+
+    # Add edges
+    # analyze_inputs -> human_gate (always)
+    graph.add_edge("analyze_inputs", "human_gate")
+
+    # human_gate -> planning OR END
     graph.add_conditional_edges(
-        "onboarding",
-        route_after_onboarding,
-        {
-            "human_gate_test_cases": "human_gate_test_cases",
-            "human_gate_inputs": "human_gate_inputs",
-            "planning": "planning",
-            END: END
-        }
-    )
-    
-    graph.add_conditional_edges(
-        "human_gate_test_cases",
-        route_after_test_case_review,
+        "human_gate",
+        route_after_human_gate,
         {
             "planning": "planning",
             END: END
         }
     )
-    
-    graph.add_conditional_edges(
-        "human_gate_inputs",
-        route_after_input_review,
-        {
-            "planning": "planning",
-            END: END
-        }
-    )
-    
-    graph.add_edge("planning", "human_gate_plan")
-    
-    graph.add_conditional_edges(
-        "human_gate_plan",
-        route_after_plan_review,
-        {
-            "generation": "generation",
-            "planning": "planning",
-            END: END
-        }
-    )
-    
-    # Make generation routing conditional - can go directly to recovery if errors detected
-    graph.add_conditional_edges(
-        "generation",
-        route_after_generation,
-        {
-            "recovery": "recovery",
-            "verification": "verification"
-        }
-    )
-    
+
+    # planning -> generation (always)
+    graph.add_edge("planning", "generation")
+
+    # generation -> verification (always)
+    graph.add_edge("generation", "verification")
+
+    # verification -> recovery OR reporting
     graph.add_conditional_edges(
         "verification",
         route_after_verification,
         {
             "recovery": "recovery",
-            "human_gate_final": "human_gate_final"
+            "reporting": "reporting"
         }
     )
-    
+
+    # recovery -> verification OR reporting
     graph.add_conditional_edges(
         "recovery",
         route_after_recovery,
         {
             "verification": "verification",
-            "human_gate_final": "human_gate_final"
+            "reporting": "reporting"
         }
     )
-    
-    graph.add_edge("human_gate_final", "reporting")
+
+    # reporting -> END
     graph.add_edge("reporting", END)
-    
-    # Compile with optional checkpointer for debugging/resume
+
+    # Compile with optional checkpointer
     if checkpointer:
         return graph.compile(checkpointer=checkpointer)
     return graph.compile()
@@ -288,32 +168,32 @@ def build_agent_graph(auto_approve: bool = False, checkpointer=None) -> StateGra
 class TestGenerationAgent:
     """
     Main agent class for running the test generation pipeline.
-    
+
     Usage:
         agent = TestGenerationAgent(
             inputs_path="inputs/saucedemo",
             output_path="output/saucedemo_tests"
         )
         result = agent.run()
-        
+
     Debugging:
         # Enable LangSmith tracing
         export LANGCHAIN_TRACING_V2=true
         export LANGCHAIN_API_KEY=your_key
         export LANGCHAIN_PROJECT=web-ui-agent
-        
+
         # Use checkpointing for resume/debug
         agent = TestGenerationAgent(..., enable_checkpointing=True)
     """
-    
+
     def __init__(
         self,
         inputs_path: str,
         output_path: str,
         llm_model_id: str = "us.anthropic.claude-opus-4-5-20251101-v1:0",
         llm_region: str = "us-east-2",
-        llm_profile: str = "bedrock-user",
-        max_recovery_attempts: int = 6,
+        llm_profile: str = "default",
+        max_recovery_attempts: int = 5,
         auto_approve: bool = False,
         enable_checkpointing: bool = False,
         enable_allure: bool = False,
@@ -321,14 +201,14 @@ class TestGenerationAgent:
     ):
         """
         Initialize the agent.
-        
+
         Args:
             inputs_path: Path to inputs directory
             output_path: Path to output directory
             llm_model_id: Bedrock model ID
             llm_region: AWS region
             llm_profile: AWS profile name
-            max_recovery_attempts: Max recovery retries
+            max_recovery_attempts: Max recovery retries (default: 5)
             auto_approve: Skip human gates if True
             enable_checkpointing: Enable state checkpointing for debugging
             enable_allure: Enable Allure reporting (default: False)
@@ -344,28 +224,28 @@ class TestGenerationAgent:
         self.enable_checkpointing = enable_checkpointing
         self.enable_allure = enable_allure
         self.headless_mode = headless_mode
-        
+
         # Setup checkpointer for debugging/resume
         self.checkpointer = MemorySaver() if enable_checkpointing else None
-        
+
         # Build the graph
         self.graph = build_agent_graph(
             auto_approve=auto_approve,
             checkpointer=self.checkpointer
         )
-        
+
         # Log LangSmith status
         if os.environ.get("LANGCHAIN_TRACING_V2") == "true":
             logger.info("LangSmith tracing ENABLED")
             logger.info(f"  Project: {os.environ.get('LANGCHAIN_PROJECT', 'default')}")
-    
+
     def run(self, stream: bool = False):
         """
         Run the agent pipeline.
-        
+
         Args:
             stream: If True, yield intermediate states (for debugging)
-        
+
         Returns:
             Final AgentState with all results (or generator if stream=True)
         """
@@ -375,9 +255,9 @@ class TestGenerationAgent:
         logger.info(f"Inputs: {self.inputs_path}")
         logger.info(f"Output: {self.output_path}")
         logger.info(f"Auto-approve: {self.auto_approve}")
-        logger.info(f"Checkpointing: {self.enable_checkpointing}")
+        logger.info(f"Max recovery: {self.max_recovery_attempts}")
         logger.info("=" * 60)
-        
+
         # Create initial state
         initial_state = create_initial_state(
             inputs_path=self.inputs_path,
@@ -389,47 +269,29 @@ class TestGenerationAgent:
             enable_allure=self.enable_allure,
             headless_mode=self.headless_mode
         )
-        
+
         # Config for checkpointing
         config = {"configurable": {"thread_id": initial_state.get("session_id", "default")}}
-        
-        # Run the graph - split into separate methods to avoid generator issue
+
+        # Run the graph
         if stream:
             return self._run_streaming(initial_state, config)
         else:
             return self._run_normal(initial_state, config)
-    
+
     def _run_normal(self, initial_state: AgentState, config: dict) -> AgentState:
         """Run agent in normal mode (non-streaming)."""
         try:
             final_state = self.graph.invoke(initial_state, config=config)
-            
-            logger.info("=" * 60)
-            logger.info("AGENT COMPLETED")
-            logger.info(f"Session ID: {final_state.get('session_id')}")
-            logger.info(f"Nodes executed: {' -> '.join(final_state.get('node_history', []))}")
-            logger.info(f"Files generated: {len(final_state.get('generated_files', {}))}")
-            logger.info(f"Recovery attempts: {final_state.get('recovery_attempts', 0)}")
-            logger.info(f"Verification: {'PASSED' if final_state.get('verification_passed') else 'FAILED'}")
-            logger.info(f"LLM calls: {final_state.get('llm_calls', 0)}")
-            
-            # Calculate and display cost
-            input_tokens = final_state.get('llm_input_tokens', 0)
-            output_tokens = final_state.get('llm_output_tokens', 0)
-            if input_tokens > 0 or output_tokens > 0:
-                model_id = final_state.get('llm_model_id', 'us.anthropic.claude-opus-4-5-20251101-v1:0')
-                cost_info = calculate_cost(input_tokens, output_tokens, model_id)
-                logger.info(f"Total tokens: {input_tokens + output_tokens:,} (input: {input_tokens:,}, output: {output_tokens:,})")
-                logger.info(f"**Approximate Cost: ${cost_info['total_cost']:.4f}** (input: ${cost_info['input_cost']:.4f}, output: ${cost_info['output_cost']:.4f})")
-            
-            logger.info("=" * 60)
-            
+
+            self._log_summary(final_state)
+
             return final_state
-            
+
         except Exception as e:
             logger.error(f"Agent failed: {e}")
             raise
-    
+
     def _run_streaming(self, initial_state: AgentState, config: dict):
         """Run agent in streaming mode (yields each step)."""
         try:
@@ -439,39 +301,41 @@ class TestGenerationAgent:
                 logger.info(f"[STREAM] Completed node: {node_name}")
                 final_state = step[node_name]
                 yield step
-            
-            # Log final summary
+
             if final_state:
-                logger.info("=" * 60)
-                logger.info("AGENT COMPLETED")
-                logger.info(f"Session ID: {final_state.get('session_id')}")
-                logger.info(f"Nodes executed: {' -> '.join(final_state.get('node_history', []))}")
-                logger.info(f"Files generated: {len(final_state.get('generated_files', {}))}")
-                logger.info(f"Recovery attempts: {final_state.get('recovery_attempts', 0)}")
-                logger.info(f"Verification: {'PASSED' if final_state.get('verification_passed') else 'FAILED'}")
-                logger.info(f"LLM calls: {final_state.get('llm_calls', 0)}")
-                
-                # Calculate and display cost
-                input_tokens = final_state.get('llm_input_tokens', 0)
-                output_tokens = final_state.get('llm_output_tokens', 0)
-                if input_tokens > 0 or output_tokens > 0:
-                    model_id = final_state.get('llm_model_id', 'us.anthropic.claude-opus-4-5-20251101-v1:0')
-                    cost_info = calculate_cost(input_tokens, output_tokens, model_id)
-                    logger.info(f"Total tokens: {input_tokens + output_tokens:,} (input: {input_tokens:,}, output: {output_tokens:,})")
-                    logger.info(f"**Approximate Cost: ${cost_info['total_cost']:.4f}** (input: ${cost_info['input_cost']:.4f}, output: ${cost_info['output_cost']:.4f})")
-                
-                logger.info("=" * 60)
-                
+                self._log_summary(final_state)
+
         except Exception as e:
             logger.error(f"Agent failed: {e}")
             raise
-    
+
+    def _log_summary(self, final_state: AgentState):
+        """Log final summary."""
+        logger.info("=" * 60)
+        logger.info("AGENT COMPLETED")
+        logger.info(f"Session ID: {final_state.get('session_id')}")
+        logger.info(f"Nodes executed: {' -> '.join(final_state.get('node_history', []))}")
+        logger.info(f"Files generated: {len(final_state.get('generated_files', {}))}")
+        logger.info(f"Recovery attempts: {final_state.get('recovery_attempts', 0)}")
+        logger.info(f"Verification: {'PASSED' if final_state.get('verification_passed') else 'FAILED'}")
+        logger.info(f"LLM calls: {final_state.get('llm_calls', 0)}")
+
+        # Calculate and display cost
+        input_tokens = final_state.get('llm_input_tokens', 0)
+        output_tokens = final_state.get('llm_output_tokens', 0)
+        if input_tokens > 0 or output_tokens > 0:
+            model_id = final_state.get('llm_model_id', 'us.anthropic.claude-opus-4-5-20251101-v1:0')
+            cost_info = calculate_cost(input_tokens, output_tokens, model_id)
+            logger.info(f"Total tokens: {input_tokens + output_tokens:,} (input: {input_tokens:,}, output: {output_tokens:,})")
+            logger.info(f"**Approximate Cost: ${cost_info['total_cost']:.4f}** (input: ${cost_info['input_cost']:.4f}, output: ${cost_info['output_cost']:.4f})")
+
+        logger.info("=" * 60)
+
     def get_state_history(self) -> list:
         """Get state history from checkpointer (for debugging)."""
         if not self.checkpointer:
             logger.warning("Checkpointing not enabled")
             return []
-        # Return checkpoint history
         return list(self.checkpointer.list())
 
 
@@ -482,29 +346,25 @@ class TestGenerationAgent:
 def main():
     """CLI entry point for the agent."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="Web UI Test Generation Agent",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Interactive mode (with human gates)
+  # Interactive mode (with human gate)
   python -m src.agent --inputs inputs/saucedemo --output output/saucedemo
-  
-  # Auto-approve mode (skip human gates)
+
+  # Auto-approve mode (skip human gate)
   python -m src.agent --inputs inputs/saucedemo --output output/saucedemo --auto
-  
-  # Custom LLM settings
-  python -m src.agent --inputs inputs/saucedemo --output output/saucedemo --profile my-profile
-  
+
   # With LangSmith tracing
   export LANGCHAIN_TRACING_V2=true
   export LANGCHAIN_API_KEY=your_key
-  export LANGCHAIN_PROJECT=web-ui-agent
   python -m src.agent --inputs inputs/saucedemo --output output/saucedemo
 """
     )
-    
+
     parser.add_argument(
         "--inputs", "-i",
         required=True,
@@ -518,12 +378,12 @@ Examples:
     parser.add_argument(
         "--auto",
         action="store_true",
-        help="Auto-approve mode (skip human gates)"
+        help="Auto-approve mode (skip human gate)"
     )
     parser.add_argument(
         "--profile",
-        default="bedrock-user",
-        help="AWS profile name (default: bedrock-user)"
+        default="default",
+        help="AWS profile name (default: default)"
     )
     parser.add_argument(
         "--region",
@@ -533,8 +393,8 @@ Examples:
     parser.add_argument(
         "--max-retries",
         type=int,
-        default=6,
-        help="Max recovery retries (default: 6)"
+        default=5,
+        help="Max recovery retries (default: 5)"
     )
     parser.add_argument(
         "--verbose", "-v",
@@ -549,15 +409,20 @@ Examples:
     parser.add_argument(
         "--allure",
         action="store_true",
-        help="Enable Allure reporting (adds --alluredir to pytest and screenshot capture on failures)"
+        help="Enable Allure reporting"
     )
-    
+    parser.add_argument(
+        "--no-headless",
+        action="store_true",
+        help="Disable headless mode (show browser)"
+    )
+
     args = parser.parse_args()
-    
+
     # Configure logging
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
-    
+
     # Create and run agent
     agent = TestGenerationAgent(
         inputs_path=args.inputs,
@@ -567,18 +432,19 @@ Examples:
         max_recovery_attempts=args.max_retries,
         auto_approve=args.auto,
         enable_checkpointing=args.checkpoint,
-        enable_allure=args.allure
+        enable_allure=args.allure,
+        headless_mode=not args.no_headless
     )
-    
+
     try:
         result = agent.run()
-        
+
         # Exit with appropriate code
         if result.get("verification_passed"):
             sys.exit(0)
         else:
             sys.exit(1)
-            
+
     except KeyboardInterrupt:
         logger.info("Interrupted by user")
         sys.exit(130)

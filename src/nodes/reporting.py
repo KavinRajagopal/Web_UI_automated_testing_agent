@@ -4,7 +4,8 @@ This node:
 1. Generates AI analysis report
 2. Saves all generated files to disk
 3. Creates Allure configuration
-4. Outputs summary statistics
+4. Saves event log (JSON trace of all events)
+5. Outputs summary statistics
 """
 
 import json
@@ -16,6 +17,7 @@ from typing import Dict, Any
 from ..models.state import AgentState
 from ..models.schemas import AIReport, SelectorRisk
 from ..utils.cost_calculator import calculate_cost
+from ..utils.event_logger import add_event_to_state
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +246,7 @@ def _save_files_to_disk(
 def _create_allure_config(output_path: str, module_name: str):
     """
     Create Allure configuration files.
-    
+
     Args:
         output_path: Output directory
         module_name: Module name for labels
@@ -252,7 +254,7 @@ def _create_allure_config(output_path: str, module_name: str):
     # Create allure results directory
     allure_dir = os.path.join(output_path, "allure-results")
     os.makedirs(allure_dir, exist_ok=True)
-    
+
     # Create environment.properties
     env_props = f"""# Allure Environment
 app.name={module_name}
@@ -261,7 +263,7 @@ generated.at={datetime.now().isoformat()}
 """
     with open(os.path.join(allure_dir, "environment.properties"), 'w') as f:
         f.write(env_props)
-    
+
     # Create categories.json
     categories = [
         {
@@ -283,23 +285,85 @@ generated.at={datetime.now().isoformat()}
         json.dump(categories, f, indent=2)
 
 
+def _save_event_log(state: AgentState, output_path: str) -> str:
+    """
+    Save the event log to a JSON file.
+
+    Args:
+        state: Current agent state
+        output_path: Output directory
+
+    Returns:
+        Path to saved event log file
+    """
+    event_log = state.get("event_log", [])
+    session_id = state.get("session_id", "unknown")
+    started_at = state.get("started_at", datetime.now().isoformat())
+
+    # Build summary
+    llm_events = [e for e in event_log if e.get("event_type") == "llm_call"]
+    error_events = [e for e in event_log if e.get("level") == "error"]
+    recovery_events = [e for e in event_log if e.get("event_type") == "recovery_attempt"]
+
+    total_input_tokens = sum(e.get("data", {}).get("input_tokens", 0) for e in llm_events)
+    total_output_tokens = sum(e.get("data", {}).get("output_tokens", 0) for e in llm_events)
+
+    # Build final status
+    if state.get("verification_passed", False):
+        final_status = "success"
+    elif state.get("needs_human_intervention", False):
+        final_status = "failed_needs_intervention"
+    else:
+        final_status = "failed"
+
+    event_log_data = {
+        "session_id": session_id,
+        "started_at": started_at,
+        "completed_at": datetime.now().isoformat(),
+        "status": final_status,
+        "events": event_log,
+        "summary": {
+            "total_events": len(event_log),
+            "llm_calls": len(llm_events),
+            "total_input_tokens": total_input_tokens,
+            "total_output_tokens": total_output_tokens,
+            "errors_count": len(error_events),
+            "recovery_attempts": len(recovery_events),
+            "verification_passed": state.get("verification_passed", False),
+            "files_generated": len(state.get("generated_files", {})),
+            "nodes_executed": state.get("node_history", [])
+        }
+    }
+
+    # Save to file
+    event_log_path = os.path.join(output_path, "event_log.json")
+    with open(event_log_path, 'w', encoding='utf-8') as f:
+        json.dump(event_log_data, f, indent=2, default=str)
+
+    logger.info(f"Event log saved to: {event_log_path}")
+    return event_log_path
+
+
 def reporting_node(state: AgentState) -> AgentState:
     """
     Reporting node - generates final report and saves outputs.
-    
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Updated state with report
     """
     logger.info("=" * 60)
     logger.info("REPORTING NODE")
     logger.info("=" * 60)
-    
+
     state["current_node"] = "reporting"
     state["node_history"] = state.get("node_history", []) + ["reporting"]
-    
+
+    # Log node start
+    add_event_to_state(state, "node_start", "reporting")
+
     output_path = state.get("output_path", "")
     module_spec = state.get("module_spec", {})
     module_name = module_spec.get("module_name", "unknown")
@@ -334,37 +398,35 @@ def reporting_node(state: AgentState) -> AgentState:
     )
     
     # Extract test execution results
-    test_execution_results = None
+    test_execution_results = {}
     tests_passed_count = 0
     tests_failed_count = 0
     test_status = []
     verification_errors = {}
-    
-    # Get checkpoint D4 results
-    checkpoint_d4 = state.get("verification_results", {}).get("checkpoint_d4", {})
+
+    # Get checkpoint D results (simplified from D1-D4)
+    checkpoint_d = state.get("verification_results", {}).get("checkpoint_d", {})
     failed_test_names = set()
-    
-    if checkpoint_d4:
-        test_execution_results = checkpoint_d4.get("metadata", {})
-        tests_passed_count = test_execution_results.get("tests_passed", 0)
-        tests_failed_count = test_execution_results.get("tests_failed", 0)
-        
-        # Extract individual test status for failed tests
-        test_error_details = test_execution_results.get("test_error_details", {})
-        if test_error_details:
-            for test_key, error_info in test_error_details.items():
-                test_name = error_info.get("test", "unknown")
+
+    if checkpoint_d:
+        metadata = checkpoint_d.get("metadata", {})
+        tests_passed_count = metadata.get("tests_passed", 0)
+        tests_failed_count = metadata.get("tests_failed", 0)
+        test_execution_results = {
+            "tests_passed": tests_passed_count,
+            "tests_failed": tests_failed_count
+        }
+
+        # Extract individual test status from verification_errors in state
+        verification_errors_list = state.get("verification_errors", [])
+        for error_info in verification_errors_list:
+            if isinstance(error_info, dict):
+                test_name = error_info.get("test_name", "unknown")
                 failed_test_names.add(test_name)
-                # Extract error summary - show more context
-                error_lines = error_info.get("error_lines", [])
-                full_traceback = error_info.get("full_traceback", [])
-                
-                # Use full traceback if available, otherwise error lines
-                if full_traceback:
-                    error_summary = '\n'.join(full_traceback[:20])  # First 20 lines of traceback
-                else:
-                    error_summary = '\n'.join(error_lines[:10])  # First 10 lines
-                
+                error_msg = error_info.get("message", "")
+                traceback = error_info.get("traceback", [])
+                error_summary = '\n'.join(traceback[:10]) if traceback else error_msg
+
                 test_status.append({
                     "test_name": test_name,
                     "file": error_info.get("file", "unknown"),
@@ -376,7 +438,7 @@ def reporting_node(state: AgentState) -> AgentState:
     # Extract all test names from generated test files and mark passed ones
     import re
     generated_files = state.get("generated_files", {})
-    d4_ran = checkpoint_d4 and checkpoint_d4.get("status") not in ["skipped", None]
+    d_ran = checkpoint_d and checkpoint_d.get("status") not in ["skipped", None]
     
     for filepath, code in generated_files.items():
         if filepath.startswith("tests/") and filepath.endswith(".py"):
@@ -388,26 +450,29 @@ def reporting_node(state: AgentState) -> AgentState:
                     test_status.append({
                         "test_name": test_name,
                         "file": filepath,
-                        "status": "passed" if d4_ran else "not_run",
+                        "status": "passed" if d_ran else "not_run",
                         "error_type": None,
                         "error_summary": None
                     })
     
-    # Collect all verification errors by checkpoint
+    # Collect all verification errors by checkpoint (simplified to A, B, C, D)
     verification_results = state.get("verification_results", {})
-    for checkpoint_key in ["checkpoint_a", "checkpoint_b", "checkpoint_c", 
-                           "checkpoint_d1", "checkpoint_d2", "checkpoint_d3", "checkpoint_d4"]:
+    for checkpoint_key in ["checkpoint_a", "checkpoint_b", "checkpoint_c", "checkpoint_d"]:
         checkpoint = verification_results.get(checkpoint_key, {})
         if checkpoint and checkpoint.get("status") == "failed":
-            checkpoint_name = checkpoint.get("checkpoint_name", checkpoint_key)
+            checkpoint_name = checkpoint.get("checkpoint_name", checkpoint_key[-1].upper())
             verification_errors[checkpoint_name] = {
                 "status": checkpoint.get("status"),
                 "files_failed": checkpoint.get("files_failed", []),
                 "error_count": len(checkpoint.get("errors", {})),
-                "errors": {k: str(v)[:500] for k, v in list(checkpoint.get("errors", {}).items())[:5]}  # First 5 errors, truncated
+                "errors": {k: str(v)[:500] for k, v in list(checkpoint.get("errors", {}).items())[:5]}
             }
-    
-    # Build AI Report
+
+    # Count actual test results
+    tests_passed_count = len([t for t in test_status if t.get("status") == "passed"])
+    tests_failed_count = len([t for t in test_status if t.get("status") == "failed"])
+
+    # Build AI Report with simplified checkpoints
     report = AIReport(
         session_id=state.get("session_id", "unknown"),
         module_name=module_name,
@@ -418,13 +483,10 @@ def reporting_node(state: AgentState) -> AgentState:
         flows_generated=len(plan.get("flows", [])),
         verification_passed=state.get("verification_passed", False),
         checkpoints_summary={
-            "A": state.get("verification_results", {}).get("checkpoint_a", {}).get("status", "unknown"),
-            "B": state.get("verification_results", {}).get("checkpoint_b", {}).get("status", "unknown"),
-            "C": state.get("verification_results", {}).get("checkpoint_c", {}).get("status", "unknown"),
-            "D1": state.get("verification_results", {}).get("checkpoint_d1", {}).get("status", "unknown"),
-            "D2": state.get("verification_results", {}).get("checkpoint_d2", {}).get("status", "unknown"),
-            "D3": state.get("verification_results", {}).get("checkpoint_d3", {}).get("status", "unknown"),
-            "D4": state.get("verification_results", {}).get("checkpoint_d4", {}).get("status", "unknown"),
+            "A_syntax": state.get("verification_results", {}).get("checkpoint_a", {}).get("status", "unknown"),
+            "B_imports": state.get("verification_results", {}).get("checkpoint_b", {}).get("status", "unknown"),
+            "C_collection": state.get("verification_results", {}).get("checkpoint_c", {}).get("status", "unknown"),
+            "D_execution": state.get("verification_results", {}).get("checkpoint_d", {}).get("status", "unknown"),
         },
         selector_risks=selector_risks,
         recommendations=recommendations,
@@ -444,20 +506,25 @@ def reporting_node(state: AgentState) -> AgentState:
         duration_seconds=None  # Could calculate from started_at
     )
     
-    # Save report as JSON
-    report_json_path = os.path.join(output_path, "ai_report.json")
+    # Save comprehensive report as single JSON file
+    report_json_path = os.path.join(output_path, "report.json")
+    report_data = report.model_dump(mode='json')
+
+    # Add markdown summary inside JSON for readability
+    report_data["markdown_summary"] = _generate_markdown_report(report)
+
     with open(report_json_path, 'w', encoding='utf-8') as f:
-        json.dump(report.model_dump(mode='json'), f, indent=2, default=str)
-    
-    # Save report as Markdown
-    report_md_path = os.path.join(output_path, "ai_report.md")
-    report_markdown = _generate_markdown_report(report)
-    with open(report_md_path, 'w', encoding='utf-8') as f:
-        f.write(report_markdown)
-    
+        json.dump(report_data, f, indent=2, default=str)
+
+    # Save event log (trace of all events)
+    logger.info("Saving event log...")
+    event_log_path = _save_event_log(state, output_path)
+
     # Update state
-    state["ai_report"] = report.model_dump(mode='json')
-    state["report_markdown"] = report_markdown
+    state["ai_report"] = report_data
+
+    # Log node complete
+    add_event_to_state(state, "node_complete", "reporting")
     
     # Log summary
     logger.info("-" * 40)
@@ -486,7 +553,8 @@ def reporting_node(state: AgentState) -> AgentState:
     
     logger.info("=" * 60)
     logger.info("GENERATION COMPLETE")
-    logger.info(f"Report saved to: {report_md_path}")
+    logger.info(f"Report saved to: {report_json_path}")
+    logger.info(f"Event log saved to: {event_log_path}")
     logger.info("=" * 60)
-    
+
     return state

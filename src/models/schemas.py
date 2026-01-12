@@ -22,17 +22,19 @@ class SelectorType(str, Enum):
     """Selector strategy types, ordered by stability preference."""
     ID = "id"
     DATA_TESTID = "data-testid"
+    DATA_TEST = "data-test"
     NAME = "name"
     ARIA_LABEL = "aria-label"
     CSS = "css"
     XPATH = "xpath"
-    
+
     @classmethod
     def stability_order(cls) -> List["SelectorType"]:
         """Return selector types ordered by stability (best first)."""
         return [
             cls.ID,
             cls.DATA_TESTID,
+            cls.DATA_TEST,
             cls.NAME,
             cls.ARIA_LABEL,
             cls.CSS,

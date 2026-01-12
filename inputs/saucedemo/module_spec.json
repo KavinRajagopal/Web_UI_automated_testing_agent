@@ -5,8 +5,8 @@
   "environment": "production",
   "browser": "chrome",
   "selector_priority": [
-    "data-testid",
     "id",
+    "data-test",
     "name",
     "aria-label"
   ],

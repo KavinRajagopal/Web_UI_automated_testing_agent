@@ -1,363 +1,254 @@
 """
-ProductsPage - Page Object for the Products/Inventory page
+Products Page Object Model for Sauce Demo application.
+Uses Selenium WebDriver for browser automation.
 """
 
+from typing import List
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
-from typing import List, Optional
+from selenium.webdriver.support.ui import Select
 from pages.base_page import BasePage
 
 
 class ProductsPage(BasePage):
-    """Page Object for the Products/Inventory page after login."""
+    """Page object for the Products/Inventory page."""
 
-    # Locators
-    PAGE_TITLE = (By.CSS_SELECTOR, "[data-test='title']")
-    INVENTORY_CONTAINER = (By.CSS_SELECTOR, "[data-test='inventory-container']")
-    INVENTORY_LIST = (By.CSS_SELECTOR, "[data-test='inventory-list']")
-    INVENTORY_ITEMS = (By.CSS_SELECTOR, "[data-test='inventory-item']")
-    PRODUCT_NAMES = (By.CSS_SELECTOR, "[data-test='inventory-item-name']")
-    PRODUCT_PRICES = (By.CSS_SELECTOR, "[data-test='inventory-item-price']")
-    SORT_DROPDOWN = (By.CSS_SELECTOR, "[data-test='product-sort-container']")
+
+    # Element Locators (auto-generated from metadata)
+    HEADER_CONTAINER = (By.ID, "header_container")
+    PRIMARY_HEADER = (By.CSS_SELECTOR, "[data-test='primary-header']")
+    REACT_BURGER_MENU_BTN = (By.ID, "react-burger-menu-btn")
+    OPEN_MENU = (By.CSS_SELECTOR, "[data-test='open-menu']")
     SHOPPING_CART_LINK = (By.CSS_SELECTOR, "[data-test='shopping-cart-link']")
-    SHOPPING_CART_BADGE = (By.CSS_SELECTOR, "[data-test='shopping-cart-badge']")
-    BURGER_MENU_BUTTON = (By.ID, "react-burger-menu-btn")
-    ERROR_MESSAGE = (By.CSS_SELECTOR, "[data-test='error']")
-    
-    # Add to cart button pattern - will be formatted with product name
-    ADD_TO_CART_BUTTON_TEMPLATE = "[data-test='add-to-cart-{product_id}']"
-
+    SECONDARY_HEADER = (By.CSS_SELECTOR, "[data-test='secondary-header']")
+    TITLE = (By.CSS_SELECTOR, "[data-test='title']")
+    ACTIVE_OPTION = (By.CSS_SELECTOR, "[data-test='active-option']")
+    PRODUCT_SORT_CONTAINER = (By.CSS_SELECTOR, "[data-test='product-sort-container']")
+    INVENTORY_CONTAINER = (By.ID, "inventory_container")
+    INVENTORY_LIST = (By.CSS_SELECTOR, "[data-test='inventory-list']")
+    INVENTORY_ITEM = (By.CSS_SELECTOR, "[data-test='inventory-item']")
+    ITEM_4_IMG_LINK = (By.ID, "item_4_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_BACKPACK_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-backpack-img']")
+    INVENTORY_ITEM_DESCRIPTION = (By.CSS_SELECTOR, "[data-test='inventory-item-description']")
+    ITEM_4_TITLE_LINK = (By.ID, "item_4_title_link")
+    INVENTORY_ITEM_NAME = (By.CSS_SELECTOR, "[data-test='inventory-item-name']")
+    INVENTORY_ITEM_DESC = (By.CSS_SELECTOR, "[data-test='inventory-item-desc']")
+    INVENTORY_ITEM_PRICE = (By.CSS_SELECTOR, "[data-test='inventory-item-price']")
+    ADD_TO_CART_SAUCE_LABS_BACKPACK = (By.ID, "add-to-cart-sauce-labs-backpack")
+    ITEM_0_IMG_LINK = (By.ID, "item_0_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_BIKE_LIGHT_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-bike-light-img']")
+    ITEM_0_TITLE_LINK = (By.ID, "item_0_title_link")
+    ADD_TO_CART_SAUCE_LABS_BIKE_LIGHT = (By.ID, "add-to-cart-sauce-labs-bike-light")
+    ITEM_1_IMG_LINK = (By.ID, "item_1_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_BOLT_T_SHIRT_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-bolt-t-shirt-img']")
+    ITEM_1_TITLE_LINK = (By.ID, "item_1_title_link")
+    ADD_TO_CART_SAUCE_LABS_BOLT_T_SHIRT = (By.ID, "add-to-cart-sauce-labs-bolt-t-shirt")
+    ITEM_5_IMG_LINK = (By.ID, "item_5_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_FLEECE_JACKET_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-fleece-jacket-img']")
+    ITEM_5_TITLE_LINK = (By.ID, "item_5_title_link")
+    ADD_TO_CART_SAUCE_LABS_FLEECE_JACKET = (By.ID, "add-to-cart-sauce-labs-fleece-jacket")
+    ITEM_2_IMG_LINK = (By.ID, "item_2_img_link")
+    INVENTORY_ITEM_SAUCE_LABS_ONESIE_IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-sauce-labs-onesie-img']")
+    ITEM_2_TITLE_LINK = (By.ID, "item_2_title_link")
+    ADD_TO_CART_SAUCE_LABS_ONESIE = (By.ID, "add-to-cart-sauce-labs-onesie")
+    ITEM_3_IMG_LINK = (By.ID, "item_3_img_link")
+    INVENTORY_ITEM_TEST_ALLTHETHINGS__T_SHIRT__RED__IMG = (By.CSS_SELECTOR, "[data-test='inventory-item-test.allthethings()-t-shirt-(red)-img']")
+    ITEM_3_TITLE_LINK = (By.ID, "item_3_title_link")
+    ADD_TO_CART_TEST_ALLTHETHINGS__T_SHIRT__RED = (By.ID, "add-to-cart-test.allthethings()-t-shirt-(red)")
+    FOOTER = (By.CSS_SELECTOR, "[data-test='footer']")
+    SOCIAL_TWITTER = (By.CSS_SELECTOR, "[data-test='social-twitter']")
+    SOCIAL_FACEBOOK = (By.CSS_SELECTOR, "[data-test='social-facebook']")
+    SOCIAL_LINKEDIN = (By.CSS_SELECTOR, "[data-test='social-linkedin']")
+    FOOTER_COPY = (By.CSS_SELECTOR, "[data-test='footer-copy']")
     def __init__(self, driver):
         """
-        Initialize ProductsPage.
-        
+        Initialize the ProductsPage.
+
         Args:
             driver: Selenium WebDriver instance
         """
         super().__init__(driver)
 
-    # Element Getters
-    def get_page_title_element(self) -> WebElement:
+    def is_page_loaded(self, timeout: int = 10) -> bool:
         """
-        Get the page title element.
-        
-        Returns:
-            WebElement: The page title element
-        """
-        return self.find_element_visible(*self.PAGE_TITLE)
+        Check if the products page is fully loaded.
 
-    def get_inventory_container(self) -> WebElement:
-        """
-        Get the inventory container element.
-        
-        Returns:
-            WebElement: The inventory container element
-        """
-        return self.find_element_visible(*self.INVENTORY_CONTAINER)
+        Args:
+            timeout: Maximum time to wait for elements
 
-    def get_inventory_list(self) -> WebElement:
-        """
-        Get the inventory list element.
-        
         Returns:
-            WebElement: The inventory list element
+            bool: True if required elements are present, False otherwise
         """
-        return self.find_element_visible(*self.INVENTORY_LIST)
+        return self.is_element_present(*self.INVENTORY_CONTAINER, timeout=timeout)
 
-    def get_inventory_items(self) -> List[WebElement]:
+    def is_on_page(self) -> bool:
         """
-        Get all inventory item elements.
-        
-        Returns:
-            List[WebElement]: List of inventory item elements
-        """
-        self.find_element_visible(*self.INVENTORY_ITEMS)
-        return self.driver.find_elements(*self.INVENTORY_ITEMS)
+        Alias for is_page_loaded().
 
-    def get_product_name_elements(self) -> List[WebElement]:
-        """
-        Get all product name elements.
-        
-        Returns:
-            List[WebElement]: List of product name elements
-        """
-        self.find_element_visible(*self.PRODUCT_NAMES)
-        return self.driver.find_elements(*self.PRODUCT_NAMES)
-
-    def get_product_price_elements(self) -> List[WebElement]:
-        """
-        Get all product price elements.
-        
-        Returns:
-            List[WebElement]: List of product price elements
-        """
-        self.find_element_visible(*self.PRODUCT_PRICES)
-        return self.driver.find_elements(*self.PRODUCT_PRICES)
-
-    def get_sort_dropdown(self) -> WebElement:
-        """
-        Get the sort dropdown element.
-        
-        Returns:
-            WebElement: The sort dropdown element
-        """
-        return self.find_element_clickable(*self.SORT_DROPDOWN)
-
-    def get_shopping_cart_link(self) -> WebElement:
-        """
-        Get the shopping cart link element.
-        
-        Returns:
-            WebElement: The shopping cart link element
-        """
-        return self.find_element_clickable(*self.SHOPPING_CART_LINK)
-
-    def get_shopping_cart_badge_element(self) -> Optional[WebElement]:
-        """
-        Get the shopping cart badge element if present.
-        
-        Returns:
-            WebElement or None: The cart badge element if present, None otherwise
-        """
-        if self.is_element_present(*self.SHOPPING_CART_BADGE):
-            return self.find_element(*self.SHOPPING_CART_BADGE)
-        return None
-
-    def get_burger_menu_button(self) -> WebElement:
-        """
-        Get the burger menu button element.
-        
-        Returns:
-            WebElement: The burger menu button element
-        """
-        return self.find_element_clickable(*self.BURGER_MENU_BUTTON)
-
-    # Action Methods
-    def is_on_products_page(self) -> bool:
-        """
-        Check if currently on the products page.
-        
         Returns:
             bool: True if on products page, False otherwise
         """
-        try:
-            title_element = self.get_page_title_element()
-            return title_element.text.upper() == "PRODUCTS"
-        except Exception:
-            return False
+        return self.is_page_loaded()
+
+    def is_products_page_displayed(self) -> bool:
+        """
+        Check if the products page is displayed.
+
+        Returns:
+            bool: True if products page is displayed, False otherwise
+        """
+        return self.is_page_loaded()
+
+    def get_page_title(self) -> str:
+        """
+        Get the page title text.
+
+        Returns:
+            str: The page title text
+        """
+        return self.get_element_text(*self.TITLE)
 
     def is_inventory_container_visible(self) -> bool:
         """
         Check if the inventory container is visible.
-        
+
         Returns:
             bool: True if inventory container is visible, False otherwise
         """
         return self.is_element_present(*self.INVENTORY_CONTAINER)
 
-    def get_page_title(self) -> str:
-        """
-        Get the page title text.
-        
-        Returns:
-            str: The page title text
-        """
-        return self.get_element_text(*self.PAGE_TITLE)
-
     def get_all_product_names(self) -> List[str]:
         """
         Get all product names displayed on the page.
-        
+
         Returns:
             List[str]: List of product names
         """
-        name_elements = self.get_product_name_elements()
-        return [element.text for element in name_elements]
+        elements = self.driver.find_elements(*self.INVENTORY_ITEM_NAME)
+        return [element.text for element in elements]
 
     def get_all_product_prices(self) -> List[str]:
         """
         Get all product prices displayed on the page.
-        
+
         Returns:
-            List[str]: List of product prices (including $ symbol)
+            List[str]: List of product prices as strings (e.g., '$29.99')
         """
-        price_elements = self.get_product_price_elements()
-        return [element.text for element in price_elements]
+        elements = self.driver.find_elements(*self.INVENTORY_ITEM_PRICE)
+        return [element.text for element in elements]
 
     def get_product_count(self) -> int:
         """
         Get the count of products displayed on the page.
-        
+
         Returns:
             int: Number of products displayed
         """
-        items = self.get_inventory_items()
-        return len(items)
-
-    def is_inventory_displayed(self) -> bool:
-        """
-        Check if the inventory/products list is displayed.
-        
-        Returns:
-            bool: True if inventory is displayed, False otherwise
-        """
-        return self.is_element_present(*self.INVENTORY_CONTAINER)
+        elements = self.driver.find_elements(*self.INVENTORY_ITEM)
+        return len(elements)
 
     def select_sort_option(self, option_value: str) -> None:
         """
         Select a sort option from the dropdown.
-        
+
         Args:
             option_value: The value of the sort option to select
-                         Options: 'az', 'za', 'lohi', 'hilo'
+                         (e.g., 'az', 'za', 'lohi', 'hilo')
         """
-        from selenium.webdriver.support.ui import Select
-        
-        dropdown = self.get_sort_dropdown()
+        dropdown = self.find_element_clickable(*self.PRODUCT_SORT_CONTAINER)
         select = Select(dropdown)
         select.select_by_value(option_value)
 
     def get_active_sort_option(self) -> str:
         """
-        Get the currently active sort option.
-        
+        Get the currently active sort option text.
+
         Returns:
-            str: The value of the currently selected sort option
+            str: The text of the active sort option
         """
-        from selenium.webdriver.support.ui import Select
-        
-        dropdown = self.get_sort_dropdown()
-        select = Select(dropdown)
-        return select.first_selected_option.get_attribute("value")
+        return self.get_element_text(*self.ACTIVE_OPTION)
 
     def add_product_to_cart(self, product_name: str) -> None:
         """
-        Add a product to the cart by its name.
-        
-        Args:
-            product_name: The name of the product to add
-                         e.g., 'Sauce Labs Backpack' -> 'sauce-labs-backpack'
-        """
-        # Convert product name to the format used in data-test attribute
-        product_id = product_name.lower().replace(" ", "-")
-        add_button_selector = self.ADD_TO_CART_BUTTON_TEMPLATE.format(product_id=product_id)
-        add_button_locator = (By.CSS_SELECTOR, add_button_selector)
-        
-        self.click(*add_button_locator)
+        Add a product to the cart by product name.
 
-    def get_cart_badge_count(self) -> int:
+        Args:
+            product_name: Name of the product to add (case-insensitive partial match)
         """
-        Get the number displayed on the cart badge.
-        
-        Returns:
-            int: The number of items in cart, 0 if badge not present
-        """
-        badge = self.get_shopping_cart_badge_element()
-        if badge:
-            try:
-                return int(badge.text)
-            except ValueError:
-                return 0
-        return 0
+        product_name_lower = product_name.lower()
+
+        if "backpack" in product_name_lower:
+            self.click(*self.ADD_TO_CART_SAUCE_LABS_BACKPACK)
+        elif "bike light" in product_name_lower:
+            self.click(*self.ADD_TO_CART_SAUCE_LABS_BIKE_LIGHT)
+        elif "bolt" in product_name_lower and "t-shirt" in product_name_lower:
+            self.click(*self.ADD_TO_CART_SAUCE_LABS_BOLT_T_SHIRT)
+        elif "fleece" in product_name_lower or "jacket" in product_name_lower:
+            self.click(*self.ADD_TO_CART_SAUCE_LABS_FLEECE_JACKET)
+        elif "onesie" in product_name_lower:
+            self.click(*self.ADD_TO_CART_SAUCE_LABS_ONESIE)
+        elif "red" in product_name_lower or "allthethings" in product_name_lower:
+            self.click(*self.ADD_TO_CART_TEST_ALLTHETHINGS__T_SHIRT__RED)
+        else:
+            raise ValueError(f"Product '{product_name}' not found")
 
     def click_shopping_cart(self) -> None:
-        """
-        Click the shopping cart link to navigate to cart page.
-        """
+        """Click the shopping cart link to navigate to the cart page."""
         self.click(*self.SHOPPING_CART_LINK)
 
     def open_burger_menu(self) -> None:
-        """
-        Open the burger/hamburger menu.
-        """
-        self.click(*self.BURGER_MENU_BUTTON)
+        """Open the burger menu by clicking the menu button."""
+        self.click(*self.REACT_BURGER_MENU_BTN)
 
-    # Additional helper methods
-    def is_page_loaded(self) -> bool:
+    def are_products_sorted_az(self) -> bool:
         """
-        Check if the products page is fully loaded.
-        
+        Check if products are sorted alphabetically A to Z.
+
         Returns:
-            bool: True if page is loaded, False otherwise
+            bool: True if products are sorted A-Z, False otherwise
         """
-        return self.is_on_products_page() and self.is_inventory_displayed()
+        names = self.get_all_product_names()
+        return names == sorted(names)
 
-    def is_title_displayed(self) -> bool:
+    def are_products_sorted_za(self) -> bool:
         """
-        Check if the page title is displayed.
-        
+        Check if products are sorted alphabetically Z to A.
+
         Returns:
-            bool: True if title is displayed, False otherwise
+            bool: True if products are sorted Z-A, False otherwise
         """
-        return self.is_element_present(*self.PAGE_TITLE)
+        names = self.get_all_product_names()
+        return names == sorted(names, reverse=True)
 
-    def get_title_text(self) -> str:
+    def _parse_price(self, price_str: str) -> float:
         """
-        Get the title text (alias for get_page_title).
-        
-        Returns:
-            str: The page title text
-        """
-        return self.get_page_title()
+        Parse a price string to a float value.
 
-    def is_on_page(self) -> bool:
-        """
-        Check if on the products page (alias for is_on_products_page).
-        
-        Returns:
-            bool: True if on products page, False otherwise
-        """
-        return self.is_on_products_page()
-
-    def get_product_by_name(self, product_name: str) -> Optional[WebElement]:
-        """
-        Get a product item element by its name.
-        
         Args:
-            product_name: The name of the product to find
-            
-        Returns:
-            WebElement or None: The product item element if found
-        """
-        items = self.get_inventory_items()
-        for item in items:
-            name_element = item.find_element(*self.PRODUCT_NAMES)
-            if name_element.text == product_name:
-                return item
-        return None
+            price_str: Price string (e.g., '$29.99')
 
-    def get_product_price_by_name(self, product_name: str) -> Optional[str]:
-        """
-        Get the price of a specific product by name.
-        
-        Args:
-            product_name: The name of the product
-            
         Returns:
-            str or None: The product price if found
+            float: Numeric price value
         """
-        product = self.get_product_by_name(product_name)
-        if product:
-            price_element = product.find_element(By.CSS_SELECTOR, "[data-test='inventory-item-price']")
-            return price_element.text
-        return None
+        return float(price_str.replace('$', ''))
 
-    def is_error_displayed(self) -> bool:
+    def are_products_sorted_price_low_high(self) -> bool:
         """
-        Check if an error message is displayed on the page.
-        
-        Returns:
-            bool: True if error is displayed, False otherwise
-        """
-        return self.is_element_present(*self.ERROR_MESSAGE)
+        Check if products are sorted by price from low to high.
 
-    def get_error_message(self) -> str:
-        """
-        Get the error message text if displayed.
-        
         Returns:
-            str: The error message text, empty string if not present
+            bool: True if products are sorted by price low to high, False otherwise
         """
-        if self.is_error_displayed():
-            return self.get_element_text(*self.ERROR_MESSAGE)
-        return ""
+        prices = self.get_all_product_prices()
+        numeric_prices = [self._parse_price(p) for p in prices]
+        return numeric_prices == sorted(numeric_prices)
+
+    def are_products_sorted_price_high_low(self) -> bool:
+        """
+        Check if products are sorted by price from high to low.
+
+        Returns:
+            bool: True if products are sorted by price high to low, False otherwise
+        """
+        prices = self.get_all_product_prices()
+        numeric_prices = [self._parse_price(p) for p in prices]
+        return numeric_prices == sorted(numeric_prices, reverse=True)

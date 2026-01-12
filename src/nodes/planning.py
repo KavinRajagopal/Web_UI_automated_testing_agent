@@ -197,7 +197,7 @@ def planning_node(state: AgentState) -> AgentState:
     llm = BedrockClient(
         model_id=state.get("llm_model_id", "us.anthropic.claude-opus-4-5-20251101-v1:0"),
         region_name=state.get("llm_region", "us-east-2"),
-        profile_name=state.get("llm_profile", "bedrock-user"),
+        profile_name=state.get("llm_profile", "default"),
         max_tokens=16384,
         enable_reasoning=True  # Enable reasoning for better planning
     )

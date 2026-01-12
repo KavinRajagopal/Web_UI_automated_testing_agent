@@ -1,543 +1,350 @@
-"""Human Gate Nodes - CLI interfaces for human-in-the-loop review.
+"""Human Gate Node - CLI interface for human-in-the-loop review.
 
-Three human gates:
-1. human_gate_inputs: Review auto-generated elements and test cases
-2. human_gate_plan: Review and approve the generation plan
-3. human_gate_final: Final review before completion
+Single human gate after test case analysis, before generation.
+Allows human to review duplicates, P0 prioritization, and 10-test selection.
 """
 
-import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
-from rich.syntax import Syntax
-from rich.markdown import Markdown
 
 from ..models.state import AgentState
+from ..utils.event_logger import add_event_to_state
 
 logger = logging.getLogger(__name__)
 console = Console()
 
 
-def _display_module_info(state: AgentState):
-    """Display module information."""
+def _display_analysis_summary(state: AgentState):
+    """Display the analysis summary."""
+    analysis = state.get("analysis_summary", {})
     module_spec = state.get("module_spec", {})
-    
-    table = Table(title="Module Information", show_header=False)
-    table.add_column("Property", style="cyan")
-    table.add_column("Value", style="green")
-    
-    table.add_row("Module Name", module_spec.get("module_name", "N/A"))
-    table.add_row("App Name", module_spec.get("app_name", "N/A"))
-    table.add_row("App URL", module_spec.get("app_url", "N/A"))
-    table.add_row("Browser", module_spec.get("browser", "N/A"))
-    
+
+    # Module info
+    console.print(Panel.fit(
+        f"[bold]Module:[/bold] {module_spec.get('module_name', 'N/A')}\n"
+        f"[bold]App URL:[/bold] {module_spec.get('app_url', 'N/A')}",
+        title="Module Information",
+        border_style="cyan"
+    ))
+
+    # Summary stats
+    total = analysis.get("total_tests", 0)
+    dups = analysis.get("duplicates_count", 0)
+    selected = analysis.get("selected_count", 0)
+    by_priority = analysis.get("by_priority", {})
+
+    console.print("\n[bold cyan]Analysis Summary[/bold cyan]")
+    console.print(f"  Total test cases in CSV: {total}")
+    console.print(f"  Duplicates identified: {dups}")
+    console.print(f"  By priority: P0={by_priority.get('P0', 0)}, P1={by_priority.get('P1', 0)}, P2={by_priority.get('P2', 0)}")
+    console.print(f"  Selected for generation: {selected} (capped at {analysis.get('capped_at', 10)})")
+
+
+def _display_duplicates(duplicates: List[Dict[str, Any]]):
+    """Display duplicate test cases."""
+    if not duplicates:
+        return
+
+    console.print(f"\n[bold yellow]Duplicates Found ({len(duplicates)})[/bold yellow]")
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Test ID", style="cyan", width=20)
+    table.add_column("Duplicate Of", style="yellow", width=20)
+    table.add_column("Similarity", style="green", width=12)
+    table.add_column("Recommendation", style="magenta", width=15)
+
+    for dup in duplicates[:10]:
+        table.add_row(
+            dup.get("test_id", "N/A"),
+            dup.get("duplicate_of", "N/A"),
+            f"{dup.get('similarity', 0)}%",
+            dup.get("recommendation", "review")
+        )
+
+    if len(duplicates) > 10:
+        table.add_row("...", f"({len(duplicates) - 10} more)", "", "")
+
     console.print(table)
 
 
-def _display_test_cases(state: AgentState):
-    """Display test cases summary."""
-    test_cases = state.get("test_cases", [])
-    
-    if not test_cases:
-        console.print("[yellow]No test cases loaded[/yellow]")
+def _display_selected_tests(selected_tests: List[Dict[str, Any]]):
+    """Display the selected test cases."""
+    if not selected_tests:
+        console.print("\n[yellow]No tests selected[/yellow]")
         return
-    
-    table = Table(title=f"Test Cases ({len(test_cases)} total)")
-    table.add_column("ID", style="cyan", width=20)
-    table.add_column("Name", style="white", width=40)
+
+    console.print(f"\n[bold green]Selected Tests ({len(selected_tests)})[/bold green]")
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("#", style="dim", width=4)
     table.add_column("Priority", style="yellow", width=8)
-    table.add_column("Page", style="green", width=15)
-    
-    for tc in test_cases[:10]:  # Show first 10
+    table.add_column("Test ID", style="cyan", width=20)
+    table.add_column("Test Name", style="white", width=50)
+
+    for i, tc in enumerate(selected_tests, 1):
+        priority = tc.get("priority", "P2")
+        # Normalize priority display
+        if priority not in ["P0", "P1", "P2"]:
+            priority = "P2"
         table.add_row(
+            str(i),
+            priority,
             tc.get("test_id", "N/A"),
-            tc.get("test_name", "N/A")[:40],
-            tc.get("priority", "N/A"),
-            tc.get("page_name", "N/A")
+            (tc.get("test_name", "N/A") or "N/A")[:50]
         )
-    
-    if len(test_cases) > 10:
-        table.add_row("...", f"({len(test_cases) - 10} more)", "", "")
-    
+
     console.print(table)
 
 
 def _display_pages(state: AgentState):
-    """Display pages and elements summary."""
+    """Display pages and element counts."""
     page_metadata = state.get("page_metadata", {})
-    
+
     if not page_metadata:
-        console.print("[yellow]No page metadata loaded[/yellow]")
         return
-    
-    table = Table(title=f"Page Elements ({len(page_metadata)} pages)")
-    table.add_column("Page", style="cyan", width=20)
+
+    console.print(f"\n[bold cyan]Page Elements ({len(page_metadata)} pages)[/bold cyan]")
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Page", style="cyan", width=25)
     table.add_column("Elements", style="green", width=10)
-    table.add_column("URL", style="white", width=40)
-    
+
     for page_name, page in page_metadata.items():
         elements = page.get("elements", [])
-        table.add_row(
-            page_name,
-            str(len(elements)),
-            page.get("page_url", "N/A")[:40]
-        )
-    
+        table.add_row(page_name, str(len(elements)))
+
     console.print(table)
 
 
-def _display_generation_plan(state: AgentState):
-    """Display the generation plan."""
-    plan = state.get("generation_plan", {})
-    
-    if not plan:
-        console.print("[yellow]No generation plan available[/yellow]")
-        return
-    
-    # Pages to generate
-    pages = plan.get("pages", [])
-    if pages:
-        table = Table(title=f"Pages to Generate ({len(pages)})")
-        table.add_column("Class Name", style="cyan")
-        table.add_column("File", style="green")
-        table.add_column("Elements", style="yellow")
-        
-        for page in pages:
-            table.add_row(
-                page.get("page_name", "N/A"),
-                page.get("file_name", "N/A"),
-                str(len(page.get("elements", [])))
-            )
-        console.print(table)
-    
-    # Flows to generate
-    flows = plan.get("flows", [])
-    if flows:
-        table = Table(title=f"Flows to Generate ({len(flows)})")
-        table.add_column("Class Name", style="cyan")
-        table.add_column("File", style="green")
-        table.add_column("Pages Used", style="yellow")
-        
-        for flow in flows:
-            table.add_row(
-                flow.get("flow_name", "N/A"),
-                flow.get("file_name", "N/A"),
-                ", ".join(flow.get("pages_used", []))
-            )
-        console.print(table)
-    
-    # Tests to generate
-    tests = plan.get("tests", [])
-    if tests:
-        table = Table(title=f"Tests to Generate ({len(tests)})")
-        table.add_column("Test ID", style="cyan", width=20)
-        table.add_column("Test Name", style="green", width=40)
-        table.add_column("Markers", style="yellow")
-        
-        for test in tests[:10]:
-            table.add_row(
-                test.get("test_id", "N/A"),
-                test.get("test_name", "N/A")[:40],
-                ", ".join(test.get("markers", []))
-            )
-        
-        if len(tests) > 10:
-            table.add_row("...", f"({len(tests) - 10} more)", "")
-        
-        console.print(table)
-
-
-def _display_verification_results(state: AgentState):
-    """Display verification results."""
-    results = state.get("verification_results", {})
-    
-    if not results:
-        console.print("[yellow]No verification results[/yellow]")
-        return
-    
-    table = Table(title="Verification Results")
-    table.add_column("Checkpoint", style="cyan")
-    table.add_column("Status", style="white")
-    table.add_column("Details", style="yellow")
-    
-    for checkpoint in ["checkpoint_a", "checkpoint_b", "checkpoint_c"]:
-        cp = results.get(checkpoint, {})
-        if cp:
-            status = cp.get("status", "unknown")
-            status_style = "green" if status == "passed" else "red"
-            
-            details = ""
-            if cp.get("files_failed"):
-                details = f"{len(cp['files_failed'])} failed"
-            elif cp.get("files_passed"):
-                details = f"{len(cp['files_passed'])} passed"
-            
-            table.add_row(
-                cp.get("checkpoint_name", checkpoint),
-                f"[{status_style}]{status}[/{status_style}]",
-                details
-            )
-    
-    console.print(table)
-
-
-def human_gate_inputs(state: AgentState) -> AgentState:
+def human_gate_node(state: AgentState) -> AgentState:
     """
-    Human Gate 0: Review generated/loaded inputs.
-    
-    Called when inputs were auto-generated or when validation warnings exist.
-    
+    Single human gate after analysis, before generation.
+
+    Displays:
+    - Analysis summary (total tests, duplicates, priorities)
+    - Duplicate test cases with recommendations
+    - Selected tests (P0 first, capped at 10)
+    - Page element summary
+
+    Options:
+    - Approve: Continue with selected tests
+    - Modify: Interactively modify selection
+    - Cancel: End execution
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Updated state with approval status
     """
     logger.info("=" * 60)
-    logger.info("HUMAN GATE: Input Review")
+    logger.info("HUMAN GATE: Test Case Review")
     logger.info("=" * 60)
-    
-    state["current_node"] = "human_gate_inputs"
-    state["node_history"] = state.get("node_history", []) + ["human_gate_inputs"]
-    
+
+    state["current_node"] = "human_gate"
+    state["node_history"] = state.get("node_history", []) + ["human_gate"]
+
+    # Log node start
+    add_event_to_state(state, "node_start", "human_gate")
+
     console.print("\n")
+    console.print("=" * 70)
     console.print(Panel.fit(
-        "[bold cyan]Human Review: Input Data[/bold cyan]\n"
-        "Please review the loaded/generated inputs before proceeding.",
-        title="🔍 Input Review Gate"
+        "[bold cyan]TEST CASE ANALYSIS REVIEW[/bold cyan]\n"
+        "Review the analysis before proceeding to code generation.",
+        title="Human Review Gate",
+        border_style="cyan"
     ))
-    
-    # Display module info
+    console.print("=" * 70)
+
+    # Display analysis summary
     console.print("\n")
-    _display_module_info(state)
-    
-    # Display test cases
-    console.print("\n")
-    _display_test_cases(state)
-    
-    # Display pages
-    console.print("\n")
+    _display_analysis_summary(state)
+
+    # Display duplicates
+    analysis = state.get("analysis_summary", {})
+    duplicates = analysis.get("duplicates", [])
+    _display_duplicates(duplicates)
+
+    # Display selected tests
+    selected_tests = analysis.get("selected_tests", [])
+    _display_selected_tests(selected_tests)
+
+    # Display page info
     _display_pages(state)
-    
-    # Show warnings if any
-    warnings = state.get("input_validation_warnings", [])
-    if warnings:
-        console.print("\n[yellow]⚠ Warnings:[/yellow]")
-        for w in warnings:
-            console.print(f"  • {w}")
-    
-    # Show generation status
-    if state.get("generated_elements") or state.get("generated_testcases"):
-        console.print("\n[cyan]ℹ Generated Data:[/cyan]")
-        if state.get("generated_elements"):
-            console.print("  • Element metadata was auto-generated")
-        if state.get("generated_testcases"):
-            console.print("  • Test cases were auto-generated")
-    
-    # Ask for approval
-    console.print("\n")
-    approved = Confirm.ask(
-        "[bold]Do you approve these inputs and want to proceed?[/bold]",
-        default=True
-    )
-    
-    if not approved:
-        feedback = Prompt.ask(
-            "[yellow]Please provide feedback (or press Enter to cancel)[/yellow]",
-            default=""
-        )
-        state["human_feedback"] = feedback
-        state["plan_approved"] = False
-        console.print("[red]Inputs not approved. Please modify and restart.[/red]")
-    else:
-        state["plan_approved"] = True
-        state["needs_input_review"] = False
-        console.print("[green]✓ Inputs approved! Proceeding to planning...[/green]")
-    
-    return state
 
-
-def human_gate_plan(state: AgentState) -> AgentState:
-    """
-    Human Gate 1: Review and approve generation plan.
-    
-    Shows the LLM-generated plan and asks for approval.
-    
-    Args:
-        state: Current agent state
-        
-    Returns:
-        Updated state with plan approval status
-    """
-    logger.info("=" * 60)
-    logger.info("HUMAN GATE: Plan Review")
-    logger.info("=" * 60)
-    
-    state["current_node"] = "human_gate_plan"
-    state["node_history"] = state.get("node_history", []) + ["human_gate_plan"]
-    
-    console.print("\n")
-    console.print(Panel.fit(
-        "[bold cyan]Human Review: Generation Plan[/bold cyan]\n"
-        "Please review the code generation plan before proceeding.",
-        title="📋 Plan Review Gate"
-    ))
-    
-    # Display the plan
-    console.print("\n")
-    _display_generation_plan(state)
-    
-    # Show plan summary
-    plan = state.get("generation_plan", {})
-    console.print("\n[cyan]Plan Summary:[/cyan]")
-    console.print(f"  • Pages: {len(plan.get('pages', []))}")
-    console.print(f"  • Flows: {len(plan.get('flows', []))}")
-    console.print(f"  • Tests: {len(plan.get('tests', []))}")
-    console.print(f"  • Fixtures: {len(plan.get('conftest_fixtures', []))}")
-    
     # Ask for approval
-    console.print("\n")
+    console.print("\n" + "-" * 70)
+    console.print("[bold]Options:[/bold]")
+    console.print("  [A]pprove - Continue with selected tests")
+    console.print("  [M]odify  - Modify test selection")
+    console.print("  [C]ancel  - Cancel generation")
+    console.print("-" * 70 + "\n")
+
     choice = Prompt.ask(
         "[bold]Choose action[/bold]",
-        choices=["approve", "revise", "cancel"],
-        default="approve"
-    )
-    
-    if choice == "approve":
+        choices=["a", "m", "c", "approve", "modify", "cancel"],
+        default="a"
+    ).lower()
+
+    if choice in ["a", "approve"]:
         state["plan_approved"] = True
-        console.print("[green]✓ Plan approved! Proceeding to generation...[/green]")
-    elif choice == "revise":
-        feedback = Prompt.ask(
-            "[yellow]What changes would you like to make?[/yellow]"
-        )
-        state["human_feedback"] = feedback
+        state["approved_tests"] = selected_tests
+
+        add_event_to_state(state, "human_approval", "human_gate", {
+            "approved": True,
+            "tests_count": len(selected_tests)
+        })
+
+        console.print("\n[green]Approved! Proceeding to planning and generation...[/green]\n")
+
+    elif choice in ["m", "modify"]:
+        # Allow modification
+        modified_tests = _modify_test_selection(state, selected_tests)
+        state["approved_tests"] = modified_tests
+        state["plan_approved"] = True
+
+        add_event_to_state(state, "human_approval", "human_gate", {
+            "approved": True,
+            "modified": True,
+            "tests_count": len(modified_tests)
+        })
+
+        console.print(f"\n[green]Modified! Proceeding with {len(modified_tests)} tests...[/green]\n")
+
+    else:  # cancel
         state["plan_approved"] = False
-        state["plan_revision_count"] = state.get("plan_revision_count", 0) + 1
-        console.print("[yellow]Plan revision requested. Re-planning...[/yellow]")
-    else:
-        state["plan_approved"] = False
-        console.print("[red]Generation cancelled.[/red]")
-    
+        state["approved_tests"] = []
+
+        add_event_to_state(state, "human_approval", "human_gate", {
+            "approved": False,
+            "cancelled": True
+        })
+
+        console.print("\n[red]Cancelled. Generation will not proceed.[/red]\n")
+
+    # Log node complete
+    add_event_to_state(state, "node_complete", "human_gate")
+
     return state
 
 
-def human_gate_final(state: AgentState) -> AgentState:
+def _modify_test_selection(state: AgentState, current_selection: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    Human Gate 2: Final review before completion.
-    
-    Shows verification results and asks for final approval.
-    
+    Interactive modification of test selection.
+
     Args:
-        state: Current agent state
-        
+        state: Agent state
+        current_selection: Currently selected tests
+
     Returns:
-        Updated state with final approval
+        Modified test selection
     """
-    logger.info("=" * 60)
-    logger.info("HUMAN GATE: Final Review")
-    logger.info("=" * 60)
-    
-    state["current_node"] = "human_gate_final"
-    state["node_history"] = state.get("node_history", []) + ["human_gate_final"]
-    
-    console.print("\n")
-    console.print(Panel.fit(
-        "[bold cyan]Human Review: Final Check[/bold cyan]\n"
-        "Review the generation results before finalizing.",
-        title="✅ Final Review Gate"
-    ))
-    
-    # Show verification results
-    console.print("\n")
-    _display_verification_results(state)
-    
-    # Show generated files
-    generated_files = state.get("generated_files", {})
-    console.print(f"\n[cyan]Generated Files: {len(generated_files)}[/cyan]")
-    for filepath in list(generated_files.keys())[:10]:
-        console.print(f"  • {filepath}")
-    if len(generated_files) > 10:
-        console.print(f"  ... and {len(generated_files) - 10} more")
-    
-    # Show any errors
-    errors = state.get("generation_errors", [])
-    if errors:
-        console.print("\n[red]Errors:[/red]")
-        for e in errors:
-            console.print(f"  • {e}")
-    
-    # Show recovery info if applicable
-    if state.get("recovery_attempts", 0) > 0:
-        console.print(f"\n[yellow]Recovery attempts: {state['recovery_attempts']}[/yellow]")
-        if state.get("recovered_files"):
-            console.print(f"  Recovered: {len(state['recovered_files'])} files")
-        if state.get("unrecoverable_files"):
-            console.print(f"  Unrecoverable: {len(state['unrecoverable_files'])} files")
-    
-    # Overall status
-    verification_passed = state.get("verification_passed", False)
-    if verification_passed:
-        console.print("\n[green]✓ All verification checks passed![/green]")
-    else:
-        console.print("\n[yellow]⚠ Some verification checks failed[/yellow]")
-    
-    # Ask for final approval
-    console.print("\n")
-    approved = Confirm.ask(
-        "[bold]Finalize and generate report?[/bold]",
-        default=verification_passed
-    )
-    
-    if approved:
-        console.print("[green]✓ Finalizing and generating report...[/green]")
-    else:
-        feedback = Prompt.ask(
-            "[yellow]Additional feedback (optional)[/yellow]",
-            default=""
-        )
-        if feedback:
-            state["human_feedback"] = feedback
-        console.print("[yellow]Please review the generated code manually.[/yellow]")
-    
-    return state
+    all_tests = state.get("test_cases", [])
+    analysis = state.get("analysis_summary", {})
+    duplicates = {d["test_id"] for d in analysis.get("duplicates", [])}
 
+    console.print("\n[bold cyan]Modify Test Selection[/bold cyan]")
+    console.print("Enter test IDs to add/remove, or 'done' to finish.")
+    console.print("Prefix with '-' to remove (e.g., '-TC_001'), or just ID to add.")
+    console.print(f"Max tests: 10 (current: {len(current_selection)})\n")
 
-def human_gate_test_cases(state: AgentState) -> AgentState:
-    """
-    Human gate for reviewing test case analysis (duplicates, suggestions).
-    
-    Allows human to:
-    - Review duplicate test cases
-    - Approve/reject suggested test cases
-    - Approve test case modifications
-    """
-    logger.info("=" * 60)
-    logger.info("HUMAN GATE: Test Case Analysis Review")
-    logger.info("=" * 60)
-    
-    state["current_node"] = "human_gate_test_cases"
-    state["node_history"] = state.get("node_history", []) + ["human_gate_test_cases"]
-    
-    console.print("\n" + "=" * 80)
-    console.print(Panel.fit("[bold cyan]TEST CASE ANALYSIS REVIEW[/bold cyan]", border_style="cyan"))
-    console.print("=" * 80 + "\n")
-    
-    analysis = state.get("test_case_analysis", {})
-    
-    if not analysis:
-        console.print("[yellow]No test case analysis available[/yellow]")
-        state["test_case_modifications_approved"] = False
-        return state
-    
-    # Display duplicates
-    duplicates = analysis.get("duplicates", [])
-    if duplicates:
-        console.print(f"[bold yellow]Found {len(duplicates)} Duplicate Test Cases[/bold yellow]\n")
-        
-        table = Table(title="Duplicate Test Cases")
-        table.add_column("Test ID", style="cyan")
-        table.add_column("Duplicates", style="yellow")
-        table.add_column("Similarity", style="green")
-        table.add_column("Reason", style="white", width=40)
-        table.add_column("Recommendation", style="magenta")
-        
-        for dup in duplicates[:10]:
-            table.add_row(
-                dup.get("test_id", "N/A"),
-                dup.get("duplicate_of", "N/A"),
-                f"{dup.get('similarity_score', 0):.0%}",
-                dup.get("reason", "N/A")[:40],
-                dup.get("recommendation", "N/A")
-            )
-        
-        if len(duplicates) > 10:
-            table.add_row("...", f"({len(duplicates) - 10} more)", "", "", "")
-        
-        console.print(table)
-        console.print("\n[yellow]Note: These are SUGGESTIONS. You can approve modifications to remove/merge duplicates.[/yellow]\n")
-    
-    # Display suggested tests
-    suggestions = analysis.get("suggested_tests", [])
-    if suggestions:
-        console.print(f"[bold green]Suggested {len(suggestions)} Additional Test Cases[/bold green]\n")
-        
-        table = Table(title="Suggested Test Cases")
-        table.add_column("Test ID", style="cyan")
-        table.add_column("Name", style="white", width=40)
-        table.add_column("Priority", style="yellow")
-        table.add_column("Coverage Gap", style="green", width=30)
-        
-        for sug in suggestions[:10]:
-            table.add_row(
-                sug.get("test_id", "N/A"),
-                sug.get("test_name", "N/A")[:40],
-                sug.get("priority", "N/A"),
-                sug.get("coverage_gap", "N/A")[:30]
-            )
-        
-        if len(suggestions) > 10:
-            table.add_row("...", f"({len(suggestions) - 10} more)", "", "")
-        
-        console.print(table)
-        console.print("\n[yellow]Note: These are SUGGESTIONS. You can approve adding these to the test suite.[/yellow]\n")
-    
-    # Summary
-    console.print(f"[bold]Summary:[/bold]")
-    console.print(f"  - Total input tests: {analysis.get('total_input_tests', 0)}")
-    console.print(f"  - Duplicates found: {analysis.get('duplicate_count', 0)}")
-    console.print(f"  - Suggested tests: {len(suggestions)}")
-    console.print(f"  - Efficient test count: {analysis.get('efficient_test_count', 0)}")
-    console.print(f"  - Overall coverage: {analysis.get('overall_coverage', 0):.1f}%\n")
-    
-    # Ask for approval
-    if duplicates or suggestions:
-        approve = Confirm.ask(
-            "[bold cyan]Do you want to approve test case modifications?[/bold cyan]\n"
-            "[dim](This will remove duplicates and/or add suggested tests)[/dim]",
-            default=False
-        )
-        
-        if approve:
-            console.print("[green]✓ Test case modifications approved[/green]")
-            state["test_case_modifications_approved"] = True
-            # TODO: Apply modifications to test cases CSV
-            # For now, we'll just flag it - actual modification can be done in a separate step
+    # Create a set of currently selected IDs for easy lookup
+    selected_ids = {tc.get("test_id") for tc in current_selection}
+    all_tests_by_id = {tc.get("test_id"): tc for tc in all_tests}
+
+    while True:
+        action = Prompt.ask("[bold]Action[/bold] (ID or -ID or 'done')", default="done")
+
+        if action.lower() == "done":
+            break
+
+        if action.startswith("-"):
+            # Remove
+            test_id = action[1:]
+            if test_id in selected_ids:
+                selected_ids.remove(test_id)
+                console.print(f"[yellow]Removed: {test_id}[/yellow]")
+            else:
+                console.print(f"[red]{test_id} not in selection[/red]")
         else:
-            console.print("[yellow]Test case modifications not approved - continuing with original test cases[/yellow]")
-            state["test_case_modifications_approved"] = False
-    else:
-        console.print("[green]No test case modifications needed[/green]")
-        state["test_case_modifications_approved"] = True  # Auto-approve if no changes needed
-    
-    console.print()
-    return state
+            # Add
+            test_id = action
+            if test_id in duplicates:
+                console.print(f"[red]{test_id} is marked as duplicate - skip[/red]")
+            elif test_id not in all_tests_by_id:
+                console.print(f"[red]{test_id} not found in test cases[/red]")
+            elif len(selected_ids) >= 10:
+                console.print("[red]Max 10 tests - remove one first[/red]")
+            elif test_id in selected_ids:
+                console.print(f"[yellow]{test_id} already selected[/yellow]")
+            else:
+                selected_ids.add(test_id)
+                console.print(f"[green]Added: {test_id}[/green]")
+
+        console.print(f"Current count: {len(selected_ids)}/10")
+
+    # Rebuild selection maintaining priority order
+    modified = [all_tests_by_id[tid] for tid in selected_ids if tid in all_tests_by_id]
+
+    # Sort by priority
+    def priority_key(tc):
+        p = str(tc.get("priority", "P2")).upper()
+        if p == "P0":
+            return 0
+        elif p == "P1":
+            return 1
+        return 2
+
+    modified.sort(key=priority_key)
+
+    console.print(f"\n[green]Modified selection: {len(modified)} tests[/green]")
+    return modified
 
 
-def skip_human_gate(state: AgentState, gate_name: str) -> AgentState:
+def skip_human_gate(state: AgentState, gate_name: str = "human_gate") -> AgentState:
     """
-    Skip a human gate (for automated/batch mode).
-    
+    Skip human gate (for automated/batch mode).
+
+    Auto-approves with the pre-selected tests from analysis.
+
     Args:
         state: Current agent state
         gate_name: Name of the gate being skipped
-        
+
     Returns:
         Updated state with gate marked as approved
     """
     logger.info(f"Skipping human gate: {gate_name} (auto-approve mode)")
-    
+
     state["current_node"] = gate_name
     state["node_history"] = state.get("node_history", []) + [gate_name]
-    
-    # For test case gate, auto-approve means don't modify
-    if gate_name == "human_gate_test_cases":
-        state["test_case_modifications_approved"] = False
-    else:
-        state["plan_approved"] = True
-    
+
+    # Auto-approve with pre-selected tests
+    analysis = state.get("analysis_summary", {})
+    selected_tests = analysis.get("selected_tests", [])
+
+    state["plan_approved"] = True
+    state["approved_tests"] = selected_tests
+
+    add_event_to_state(state, "human_approval", gate_name, {
+        "approved": True,
+        "auto_approved": True,
+        "tests_count": len(selected_tests)
+    })
+
+    logger.info(f"Auto-approved {len(selected_tests)} tests")
+
     return state
+
+
+# Backwards compatibility aliases
+human_gate_inputs = human_gate_node
+human_gate_plan = skip_human_gate
+human_gate_final = skip_human_gate
+human_gate_test_cases = human_gate_node

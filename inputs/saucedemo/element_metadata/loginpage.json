@@ -9,7 +9,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "login-container",
           "confidence": 0.98,
           "is_stable": true
@@ -24,7 +24,7 @@
       "element_type": "input",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "username",
           "confidence": 0.98,
           "is_stable": true
@@ -51,7 +51,7 @@
       "element_type": "input",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "password",
           "confidence": 0.98,
           "is_stable": true
@@ -78,7 +78,7 @@
       "element_type": "button",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "login-button",
           "confidence": 0.98,
           "is_stable": true
@@ -105,7 +105,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "login-credentials-container",
           "confidence": 0.98,
           "is_stable": true
@@ -120,7 +120,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "login-credentials",
           "confidence": 0.98,
           "is_stable": true
@@ -141,7 +141,7 @@
       "element_type": "element",
       "selectors": [
         {
-          "selector_type": "data-testid",
+          "selector_type": "data-test",
           "value": "login-password",
           "confidence": 0.98,
           "is_stable": true
@@ -149,6 +149,27 @@
       ],
       "is_required": false,
       "wait_strategy": "clickable"
+    },
+    {
+      "name": "error-message",
+      "description": "Error message displayed for invalid login attempts",
+      "element_type": "element",
+      "selectors": [
+        {
+          "selector_type": "data-test",
+          "value": "error",
+          "confidence": 0.98,
+          "is_stable": true
+        },
+        {
+          "selector_type": "css",
+          "value": ".error-message-container",
+          "confidence": 0.85,
+          "is_stable": true
+        }
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
     }
   ],
   "last_updated": "2026-01-09T03:38:07.719065",

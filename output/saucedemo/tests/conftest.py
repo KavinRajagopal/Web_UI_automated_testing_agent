@@ -17,21 +17,26 @@ def base_url():
 def driver(request):
     """Chrome WebDriver fixture.
     
-    To run with visible browser (default for debugging):
-        pytest tests/ -v
+    Default: Headless mode (HEADLESS=true)
     
-    To run in headless mode:
-        HEADLESS=true pytest tests/ -v
+    To run with visible browser (for debugging):
+        HEADLESS=false pytest tests/ -v
         OR
-        pytest --headless=true tests/ -v
+        pytest --headless=false tests/ -v
     """
     options = Options()
     
-    # Check for headless setting (default: False - show browser for debugging)
+    # Check for headless setting
+    # Priority: pytest --headless flag > environment variable > state default
     headless = request.config.getoption("--headless", default=None)
     if headless is None:
-        # Check environment variable (defaults to False - visible browser)
-        headless = os.getenv("HEADLESS", "false").lower() == "true"
+        # Check environment variable
+        headless_env = os.getenv("HEADLESS")
+        if headless_env is not None:
+            headless = headless_env.lower() == "true"
+        else:
+            # Use state default (from agent configuration)
+            headless = True  # This will be replaced by .format()
     else:
         headless = headless.lower() == "true"
     
@@ -60,7 +65,7 @@ def pytest_addoption(parser):
         "--headless",
         action="store",
         default=None,
-        help="Run browser in headless mode: --headless=true or --headless=false (default: false - visible browser)"
+        help="Run browser in headless mode: --headless=true or --headless=false (default: true - headless mode)"
     )
 
 
