@@ -1,6 +1,6 @@
 """
 Cart Page Object Model for Sauce Demo application.
-Handles cart page interactions using Selenium WebDriver.
+Uses Selenium WebDriver for browser automation.
 """
 
 from typing import List, Dict
@@ -9,7 +9,10 @@ from pages.base_page import BasePage
 
 
 class CartPage(BasePage):
-    """Page object for the Cart page of Sauce Demo application."""
+    """
+    Page Object Model for the Cart page.
+    Handles cart viewing, item management, and checkout navigation.
+    """
 
 
     # Element Locators (auto-generated from metadata)
@@ -60,16 +63,16 @@ class CartPage(BasePage):
     FOOTER_COPY = (By.CSS_SELECTOR, "[data-test='footer-copy']")
     def is_page_loaded(self) -> bool:
         """
-        Check if the cart page is loaded by verifying required elements are present.
+        Check if the cart page is fully loaded.
         
         Returns:
-            bool: True if the page is loaded, False otherwise.
+            bool: True if the required page elements are present, False otherwise.
         """
         return self.is_element_present(*self.HEADER_CONTAINER, timeout=10)
 
     def is_on_page(self) -> bool:
         """
-        Alias for is_page_loaded() to check if on the cart page.
+        Alias for is_page_loaded().
         
         Returns:
             bool: True if on the cart page, False otherwise.
@@ -81,7 +84,7 @@ class CartPage(BasePage):
         Check if the cart page is displayed.
         
         Returns:
-            bool: True if cart page is displayed, False otherwise.
+            bool: True if the cart page is displayed, False otherwise.
         """
         return self.is_page_loaded() and self.is_element_present(*self.TITLE, timeout=5)
 
@@ -104,34 +107,36 @@ class CartPage(BasePage):
         """
         items = []
         try:
-            # Find all inventory items in the cart
-            item_elements = self.driver.find_elements(*self.INVENTORY_ITEM)
+            # Find all cart item containers
+            cart_items = self.driver.find_elements(*self.INVENTORY_ITEM)
             
-            for item in item_elements:
+            for item in cart_items:
                 item_data = {}
+                
+                # Get item name
                 try:
-                    # Get item name
                     name_element = item.find_element(By.CLASS_NAME, "inventory_item_name")
                     item_data["name"] = name_element.text
-                except:
+                except Exception:
                     item_data["name"] = ""
                 
+                # Get item description
                 try:
-                    # Get item description
                     desc_element = item.find_element(By.CLASS_NAME, "inventory_item_desc")
                     item_data["description"] = desc_element.text
-                except:
+                except Exception:
                     item_data["description"] = ""
                 
+                # Get item price
                 try:
-                    # Get item price
                     price_element = item.find_element(By.CLASS_NAME, "inventory_item_price")
                     item_data["price"] = price_element.text
-                except:
+                except Exception:
                     item_data["price"] = ""
                 
                 items.append(item_data)
-        except:
+                
+        except Exception:
             pass
         
         return items
@@ -141,12 +146,12 @@ class CartPage(BasePage):
         Get the number of items in the cart.
         
         Returns:
-            int: Number of items in the cart.
+            int: The count of items in the cart.
         """
         try:
-            item_elements = self.driver.find_elements(*self.INVENTORY_ITEM)
-            return len(item_elements)
-        except:
+            cart_items = self.driver.find_elements(*self.INVENTORY_ITEM)
+            return len(cart_items)
+        except Exception:
             return 0
 
     def remove_item_from_cart(self, item_name: str) -> bool:
@@ -160,21 +165,22 @@ class CartPage(BasePage):
             bool: True if item was removed successfully, False otherwise.
         """
         try:
-            # Find all inventory items
-            item_elements = self.driver.find_elements(*self.INVENTORY_ITEM)
+            # Find all cart items
+            cart_items = self.driver.find_elements(*self.INVENTORY_ITEM)
             
-            for item in item_elements:
+            for item in cart_items:
                 try:
                     name_element = item.find_element(By.CLASS_NAME, "inventory_item_name")
-                    if name_element.text.lower() == item_name.lower():
+                    if name_element.text == item_name:
                         # Find and click the remove button within this item
                         remove_button = item.find_element(By.CSS_SELECTOR, "button[id^='remove-']")
                         remove_button.click()
                         return True
-                except:
+                except Exception:
                     continue
+            
             return False
-        except:
+        except Exception:
             return False
 
     def click_checkout(self) -> None:
@@ -186,26 +192,26 @@ class CartPage(BasePage):
 
     def click_continue_shopping(self) -> None:
         """
-        Click the continue shopping button to return to inventory.
+        Click the continue shopping button to return to the inventory page.
         """
         continue_shopping_locator = (By.ID, "continue-shopping")
         self.click(*continue_shopping_locator)
 
-    def is_item_in_cart(self, item_name: str) -> bool:
+    def get_cart_badge_count(self) -> int:
         """
-        Check if a specific item is in the cart.
+        Get the count displayed on the shopping cart badge.
         
-        Args:
-            item_name: The name of the item to check for.
-            
         Returns:
-            bool: True if item is in cart, False otherwise.
+            int: The number shown on the cart badge, 0 if not present.
         """
-        cart_items = self.get_cart_items()
-        for item in cart_items:
-            if item.get("name", "").lower() == item_name.lower():
-                return True
-        return False
+        try:
+            badge_locator = (By.CLASS_NAME, "shopping_cart_badge")
+            if self.is_element_present(*badge_locator, timeout=2):
+                badge_text = self.get_element_text(*badge_locator)
+                return int(badge_text)
+        except Exception:
+            pass
+        return 0
 
     def click_shopping_cart(self) -> None:
         """
@@ -213,35 +219,71 @@ class CartPage(BasePage):
         """
         self.click(*self.SHOPPING_CART_LINK)
 
-    def open_menu(self) -> None:
+    def click_item_link(self, item_name: str) -> bool:
         """
-        Open the burger menu.
-        """
-        self.click(*self.REACT_BURGER_MENU_BTN)
-
-    def click_twitter_link(self) -> None:
-        """
-        Click the Twitter social media link in the footer.
-        """
-        self.click(*self.SOCIAL_TWITTER)
-
-    def click_facebook_link(self) -> None:
-        """
-        Click the Facebook social media link in the footer.
-        """
-        self.click(*self.SOCIAL_FACEBOOK)
-
-    def click_linkedin_link(self) -> None:
-        """
-        Click the LinkedIn social media link in the footer.
-        """
-        self.click(*self.SOCIAL_LINKEDIN)
-
-    def get_footer_text(self) -> str:
-        """
-        Get the footer copyright text.
+        Click on an item's name link to view its details.
         
+        Args:
+            item_name: The name of the item to click.
+            
         Returns:
-            str: The footer copyright text.
+            bool: True if item link was clicked, False otherwise.
         """
-        return self.get_element_text(*self.FOOTER_COPY)
+        try:
+            cart_items = self.driver.find_elements(*self.INVENTORY_ITEM)
+            
+            for item in cart_items:
+                try:
+                    name_element = item.find_element(By.CLASS_NAME, "inventory_item_name")
+                    if name_element.text == item_name:
+                        name_element.click()
+                        return True
+                except Exception:
+                    continue
+            
+            return False
+        except Exception:
+            return False
+
+    def is_item_in_cart(self, item_name: str) -> bool:
+        """
+        Check if a specific item is in the cart.
+        
+        Args:
+            item_name: The name of the item to check.
+            
+        Returns:
+            bool: True if item is in cart, False otherwise.
+        """
+        cart_items = self.get_cart_items()
+        for item in cart_items:
+            if item.get("name") == item_name:
+                return True
+        return False
+
+    def get_item_price(self, item_name: str) -> str:
+        """
+        Get the price of a specific item in the cart.
+        
+        Args:
+            item_name: The name of the item.
+            
+        Returns:
+            str: The price of the item, empty string if not found.
+        """
+        cart_items = self.get_cart_items()
+        for item in cart_items:
+            if item.get("name") == item_name:
+                return item.get("price", "")
+        return ""
+
+    def remove_all_items(self) -> None:
+        """
+        Remove all items from the cart.
+        """
+        while self.get_cart_item_count() > 0:
+            try:
+                remove_button = self.driver.find_element(By.CSS_SELECTOR, "button[id^='remove-']")
+                remove_button.click()
+            except Exception:
+                break

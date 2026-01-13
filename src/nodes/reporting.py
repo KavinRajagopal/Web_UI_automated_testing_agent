@@ -15,9 +15,14 @@ from datetime import datetime
 from typing import Dict, Any
 
 from ..models.state import AgentState
-from ..models.schemas import AIReport, SelectorRisk
+from ..models.schemas import (
+    AIReport, SelectorRisk, PlanningSection, DuplicateAnalysisSection,
+    PriorityStackingSection, CoverageSection, RecoveryLogEntry,
+    RecoveryLogSection, FinalSummarySection
+)
 from ..utils.cost_calculator import calculate_cost
 from ..utils.event_logger import add_event_to_state
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -127,13 +132,322 @@ def _generate_recommendations(state: AgentState) -> list:
     return recommendations
 
 
+# =============================================================================
+# ENHANCED REPORT SECTION BUILDERS
+# =============================================================================
+
+def _build_planning_section(state: AgentState) -> Optional[PlanningSection]:
+    """Build planning section from analysis_summary. Returns None on error."""
+    try:
+        analysis = state.get("analysis_summary", {})
+        if not analysis:
+            return None
+
+        return PlanningSection(
+            total_test_cases_in_csv=analysis.get("total_tests", 0),
+            selected_test_count=analysis.get("selected_count", 0),
+            max_test_cap=analysis.get("capped_at", 10),
+            selection_reason=f"Priority order P0 > P1 > P2, capped at {analysis.get('capped_at', 10)} tests"
+        )
+    except Exception as e:
+        logger.warning(f"Failed to build planning section: {e}")
+        return None
+
+
+def _build_duplicate_analysis_section(state: AgentState) -> Optional[DuplicateAnalysisSection]:
+    """Build duplicate analysis section from analysis_summary. Returns None on error."""
+    try:
+        analysis = state.get("analysis_summary", {})
+        if not analysis:
+            return None
+
+        duplicates = analysis.get("duplicates", [])
+        return DuplicateAnalysisSection(
+            duplicates_count=len(duplicates),
+            duplicate_pairs=duplicates
+        )
+    except Exception as e:
+        logger.warning(f"Failed to build duplicate analysis section: {e}")
+        return None
+
+
+def _build_priority_stacking_section(state: AgentState) -> Optional[PriorityStackingSection]:
+    """Build priority stacking section from analysis_summary. Returns None on error."""
+    try:
+        analysis = state.get("analysis_summary", {})
+        if not analysis:
+            return None
+
+        by_priority = analysis.get("by_priority", {})
+        selected_tests = analysis.get("selected_tests", [])
+
+        # Categorize selected tests by priority
+        p0_selected = []
+        p1_selected = []
+        p2_selected = []
+
+        for tc in selected_tests:
+            priority = tc.get("priority", "").upper()
+            test_id = tc.get("test_id", "")
+            if priority == "P0":
+                p0_selected.append(test_id)
+            elif priority == "P1":
+                p1_selected.append(test_id)
+            else:
+                p2_selected.append(test_id)
+
+        return PriorityStackingSection(
+            p0_count=by_priority.get("P0", 0),
+            p1_count=by_priority.get("P1", 0),
+            p2_count=by_priority.get("P2", 0),
+            p0_selected=p0_selected,
+            p1_selected=p1_selected,
+            p2_selected=p2_selected
+        )
+    except Exception as e:
+        logger.warning(f"Failed to build priority stacking section: {e}")
+        return None
+
+
+def _build_recovery_log_section(state: AgentState) -> Optional[RecoveryLogSection]:
+    """Build recovery log section from event_log. Returns None on error."""
+    try:
+        event_log = state.get("event_log", [])
+        recovery_attempts = state.get("recovery_attempts", 0)
+        max_attempts = state.get("max_recovery_attempts", 5)
+
+        # Extract all recovery_attempt events
+        recovery_events = [e for e in event_log if e.get("event_type") == "recovery_attempt"]
+
+        # Also get error events that occurred before each recovery
+        error_events = [e for e in event_log if e.get("event_type") == "verification_result" or e.get("level") == "error"]
+
+        recovery_entries = []
+        for event in recovery_events:
+            data = event.get("data", {})
+            attempt_num = data.get("attempt", 0)
+
+            # Get error details from verification_errors at time of this attempt
+            error_details = []
+            verification_errors = state.get("verification_errors", [])
+            for err in verification_errors[:5]:  # Limit to 5 errors
+                if isinstance(err, dict):
+                    error_details.append({
+                        "file": err.get("file", "unknown"),
+                        "error_type": err.get("error_type", "Unknown"),
+                        "error_message": str(err.get("message", ""))[:200]
+                    })
+
+            entry = RecoveryLogEntry(
+                attempt_number=attempt_num,
+                timestamp=event.get("timestamp", ""),
+                files_fixed=data.get("files_fixed", []),
+                files_unrecoverable=data.get("files_unrecoverable", []),
+                errors_addressed=data.get("errors_addressed", 0),
+                error_details=error_details
+            )
+            recovery_entries.append(entry)
+
+        # Determine final status
+        if state.get("verification_passed", False):
+            final_status = "success"
+        elif state.get("needs_human_intervention", False):
+            final_status = "exhausted"
+        elif recovery_attempts > 0:
+            final_status = "partial"
+        else:
+            final_status = "not_needed"
+
+        return RecoveryLogSection(
+            total_recovery_attempts=recovery_attempts,
+            max_attempts_allowed=max_attempts,
+            recovery_log=recovery_entries,
+            final_status=final_status
+        )
+    except Exception as e:
+        logger.warning(f"Failed to build recovery log section: {e}")
+        return None
+
+
+def _build_final_summary_section(state: AgentState, test_status: List[Dict]) -> Optional[FinalSummarySection]:
+    """Build enhanced final summary section. Returns None on error."""
+    try:
+        plan = state.get("generation_plan", {})
+        tests_generated = len(plan.get("tests", []))
+
+        passed = [t for t in test_status if t.get("status") == "passed"]
+        failed = [t for t in test_status if t.get("status") == "failed"]
+        not_run = [t for t in test_status if t.get("status") == "not_run"]
+
+        failed_details = []
+        for t in failed:
+            failed_details.append({
+                "test_name": t.get("test_name", "unknown"),
+                "file": t.get("file", "unknown"),
+                "error_type": t.get("error_type", "Unknown"),
+                "error_summary": str(t.get("error_summary", "No details available"))[:500]
+            })
+
+        total_runnable = len(passed) + len(failed)
+        success_rate = (len(passed) / total_runnable * 100) if total_runnable > 0 else 0
+
+        return FinalSummarySection(
+            total_tests_generated=tests_generated,
+            tests_passed=len(passed),
+            tests_failed=len(failed),
+            tests_not_run=len(not_run),
+            failed_test_details=failed_details,
+            success_rate_percent=round(success_rate, 1)
+        )
+    except Exception as e:
+        logger.warning(f"Failed to build final summary section: {e}")
+        return None
+
+
+def _build_coverage_section(state: AgentState, bedrock_client=None) -> Optional[CoverageSection]:
+    """
+    Build coverage section using LLM to analyze test types and suggest missing scenarios.
+    Returns None on error.
+    """
+    try:
+        approved_tests = state.get("approved_tests", [])
+        page_metadata = state.get("page_metadata", {})
+
+        if not approved_tests:
+            return None
+
+        # Group tests by page
+        tests_by_page = {}
+        for tc in approved_tests:
+            page = tc.get("page_name", "Unknown")
+            if page not in tests_by_page:
+                tests_by_page[page] = []
+            tests_by_page[page].append(tc)
+
+        # Build coverage by page (basic metrics)
+        coverage_by_page = {}
+        for page_name, tests in tests_by_page.items():
+            # Analyze test types from test names/steps
+            test_types = set()
+            for tc in tests:
+                test_name = tc.get("test_name", "").lower()
+                steps = tc.get("steps", "").lower()
+
+                if "invalid" in test_name or "wrong" in test_name or "error" in test_name:
+                    test_types.add("negative")
+                elif "empty" in test_name or "special" in test_name or "edge" in test_name:
+                    test_types.add("edge_case")
+                elif "valid" in test_name or "success" in test_name:
+                    test_types.add("positive")
+                else:
+                    test_types.add("positive")  # Default
+
+            coverage_by_page[page_name] = {
+                "test_count": len(tests),
+                "test_types_covered": list(test_types)
+            }
+
+        # Generate suggestions based on analysis
+        suggestions = []
+        summary_parts = []
+
+        for page_name, data in coverage_by_page.items():
+            test_types = set(data.get("test_types_covered", []))
+            test_count = data.get("test_count", 0)
+
+            # Calculate approximate coverage
+            expected_types = {"positive", "negative", "edge_case"}
+            covered_types = test_types & expected_types
+            coverage_pct = int(len(covered_types) / len(expected_types) * 100)
+
+            summary_parts.append(f"{page_name} has ~{coverage_pct}% test type coverage")
+
+            # Suggest missing test types
+            if "negative" not in test_types:
+                suggestions.append(f"{page_name}: Add negative test cases (e.g., invalid input handling)")
+            if "edge_case" not in test_types:
+                suggestions.append(f"{page_name}: Add edge case tests (e.g., empty fields, special characters)")
+            if test_count < 3:
+                suggestions.append(f"{page_name}: Consider adding more test cases (currently only {test_count})")
+
+        # Use LLM for detailed analysis if available
+        if bedrock_client and approved_tests:
+            try:
+                llm_suggestions = _get_llm_coverage_suggestions(
+                    bedrock_client, approved_tests, page_metadata, state
+                )
+                if llm_suggestions:
+                    suggestions.extend(llm_suggestions.get("suggestions", []))
+                    if llm_suggestions.get("summary"):
+                        summary_parts.append(llm_suggestions["summary"])
+            except Exception as llm_err:
+                logger.warning(f"LLM coverage analysis failed (non-fatal): {llm_err}")
+
+        return CoverageSection(
+            coverage_by_page=coverage_by_page,
+            missing_coverage_suggestions=suggestions[:10],  # Cap at 10
+            coverage_analysis_summary=". ".join(summary_parts) if summary_parts else ""
+        )
+    except Exception as e:
+        logger.warning(f"Failed to build coverage section: {e}")
+        return None
+
+
+def _get_llm_coverage_suggestions(
+    bedrock_client, approved_tests: List[Dict], page_metadata: Dict, state: AgentState
+) -> Optional[Dict]:
+    """
+    Use LLM to analyze test coverage and generate suggestions.
+    Returns None on error.
+    """
+    try:
+        # Build prompt for coverage analysis
+        test_summary = []
+        for tc in approved_tests[:15]:  # Limit to first 15 tests
+            test_summary.append(f"- {tc.get('test_name', 'Unknown')}: {tc.get('steps', '')[:100]}")
+
+        pages_summary = []
+        for page_name, page_data in page_metadata.items():
+            elements = page_data.get("elements", [])
+            element_names = [e.get("name", "") for e in elements[:10]]
+            pages_summary.append(f"{page_name}: {', '.join(element_names)}")
+
+        prompt = f"""Analyze these test cases and suggest missing test coverage:
+
+TEST CASES:
+{chr(10).join(test_summary)}
+
+PAGES AND ELEMENTS:
+{chr(10).join(pages_summary)}
+
+Provide:
+1. A one-sentence summary of overall coverage gaps
+2. Up to 5 specific test case suggestions (format: "PageName: Add test for X")
+
+Respond in this exact JSON format:
+{{"summary": "...", "suggestions": ["PageName: Add test for X", ...]}}"""
+
+        response = bedrock_client.generate(prompt, max_tokens=500)
+
+        # Parse JSON from response
+        import re
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group())
+
+        return None
+    except Exception as e:
+        logger.debug(f"LLM coverage analysis error: {e}")
+        return None
+
+
 def _generate_markdown_report(report: AIReport) -> str:
     """
     Generate markdown report from AIReport.
-    
+
     Args:
         report: AIReport object
-        
+
     Returns:
         Markdown string
     """
@@ -146,6 +460,43 @@ def _generate_markdown_report(report: AIReport) -> str:
     lines.append("")
     lines.append("---")
     lines.append("")
+
+    # Planning Section (NEW)
+    if report.planning:
+        lines.append("## Planning")
+        lines.append("")
+        lines.append(f"- **Total Test Cases in CSV:** {report.planning.total_test_cases_in_csv}")
+        lines.append(f"- **Selected for Generation:** {report.planning.selected_test_count}")
+        lines.append(f"- **Max Test Cap:** {report.planning.max_test_cap}")
+        lines.append(f"- **Selection Method:** {report.planning.selection_reason}")
+        lines.append("")
+
+    # Duplicate Analysis Section (NEW)
+    if report.duplicate_analysis and report.duplicate_analysis.duplicates_count > 0:
+        lines.append("## Duplicate Analysis")
+        lines.append("")
+        lines.append(f"**{report.duplicate_analysis.duplicates_count} duplicates identified**")
+        lines.append("")
+        lines.append("| Test ID | Duplicate Of | Similarity | Recommendation |")
+        lines.append("|---------|--------------|------------|----------------|")
+        for dup in report.duplicate_analysis.duplicate_pairs[:10]:
+            test_id = dup.get("test_id", "?")
+            dup_of = dup.get("duplicate_of", "?")
+            sim = dup.get("similarity", 0)
+            rec = dup.get("recommendation", "review")
+            lines.append(f"| {test_id} | {dup_of} | {sim}% | {rec} |")
+        lines.append("")
+
+    # Priority Breakdown Section (NEW)
+    if report.priority_breakdown:
+        pb = report.priority_breakdown
+        lines.append("## Priority Breakdown")
+        lines.append("")
+        lines.append(f"- **P0 (Critical):** {pb.p0_count} total, {len(pb.p0_selected)} selected")
+        lines.append(f"- **P1 (Major):** {pb.p1_count} total, {len(pb.p1_selected)} selected")
+        lines.append(f"- **P2 (Minor):** {pb.p2_count} total, {len(pb.p2_selected)} selected")
+        lines.append("")
+
     lines.append("## Summary")
     lines.append("")
     lines.append(f"- **Tests Generated:** {report.tests_generated}")
@@ -153,7 +504,7 @@ def _generate_markdown_report(report: AIReport) -> str:
     lines.append(f"- **Flows Generated:** {report.flows_generated}")
     lines.append(f"- **Verification Status:** {'✅ PASSED' if report.verification_passed else '❌ FAILED'}")
     lines.append("")
-    
+
     if report.checkpoints_summary:
         lines.append("## Verification Checkpoints")
         lines.append("")
@@ -161,14 +512,84 @@ def _generate_markdown_report(report: AIReport) -> str:
             status_icon = "✅" if cp_status == "passed" else "❌"
             lines.append(f"- {status_icon} **Checkpoint {cp_name}:** {cp_status.upper()}")
         lines.append("")
-    
+
+    # Coverage Section (NEW)
+    if report.coverage:
+        lines.append("## Coverage Analysis")
+        lines.append("")
+        if report.coverage.coverage_analysis_summary:
+            lines.append(f"**Summary:** {report.coverage.coverage_analysis_summary}")
+            lines.append("")
+        if report.coverage.coverage_by_page:
+            lines.append("### By Page")
+            lines.append("")
+            lines.append("| Page | Tests | Test Types |")
+            lines.append("|------|-------|------------|")
+            for page, data in report.coverage.coverage_by_page.items():
+                test_count = data.get("test_count", 0)
+                test_types = ", ".join(data.get("test_types_covered", []))
+                lines.append(f"| {page} | {test_count} | {test_types} |")
+            lines.append("")
+        if report.coverage.missing_coverage_suggestions:
+            lines.append("### Missing Coverage Suggestions")
+            lines.append("")
+            for suggestion in report.coverage.missing_coverage_suggestions:
+                lines.append(f"- {suggestion}")
+            lines.append("")
+
+    # Recovery Log Section (NEW)
+    if report.recovery_log and report.recovery_log.total_recovery_attempts > 0:
+        rl = report.recovery_log
+        lines.append("## Recovery Log")
+        lines.append("")
+        lines.append(f"**Total Attempts:** {rl.total_recovery_attempts}/{rl.max_attempts_allowed}")
+        lines.append(f"**Final Status:** {rl.final_status}")
+        lines.append("")
+        if rl.recovery_log:
+            lines.append("| Attempt | Timestamp | Files Fixed | Errors Addressed |")
+            lines.append("|---------|-----------|-------------|------------------|")
+            for entry in rl.recovery_log:
+                ts = entry.timestamp[:19] if entry.timestamp else "N/A"
+                lines.append(f"| {entry.attempt_number} | {ts} | {len(entry.files_fixed)} | {entry.errors_addressed} |")
+            lines.append("")
+            # Show error details for first few entries
+            for entry in rl.recovery_log[:3]:
+                if entry.error_details:
+                    lines.append(f"### Attempt {entry.attempt_number} Errors")
+                    for err in entry.error_details[:3]:
+                        lines.append(f"- **{err.get('error_type', 'Error')}** in `{err.get('file', 'unknown')}`")
+                        lines.append(f"  - {err.get('error_message', 'No message')[:100]}")
+                    lines.append("")
+
+    # Final Summary Section (NEW)
+    if report.final_summary:
+        fs = report.final_summary
+        lines.append("## Final Summary")
+        lines.append("")
+        lines.append(f"- **Total Tests Generated:** {fs.total_tests_generated}")
+        lines.append(f"- **Tests Passed:** {fs.tests_passed}")
+        lines.append(f"- **Tests Failed:** {fs.tests_failed}")
+        lines.append(f"- **Tests Not Run:** {fs.tests_not_run}")
+        lines.append(f"- **Success Rate:** {fs.success_rate_percent}%")
+        lines.append("")
+        if fs.failed_test_details:
+            lines.append("### Failed Test Details")
+            lines.append("")
+            for detail in fs.failed_test_details:
+                lines.append(f"#### {detail['test_name']}")
+                lines.append(f"- **File:** `{detail['file']}`")
+                lines.append(f"- **Error Type:** {detail['error_type']}")
+                error_preview = detail['error_summary'][:200] if detail['error_summary'] else "N/A"
+                lines.append(f"- **Error:** {error_preview}...")
+                lines.append("")
+
     if report.test_execution_results:
         lines.append("## Test Execution Results")
         lines.append("")
         lines.append(f"- **Tests Passed:** {report.tests_passed_count}")
         lines.append(f"- **Tests Failed:** {report.tests_failed_count}")
         lines.append("")
-        
+
         if report.test_status:
             lines.append("### Test Status")
             lines.append("")
@@ -181,7 +602,7 @@ def _generate_markdown_report(report: AIReport) -> str:
                     error = test_info["error"][:200]  # Truncate long errors
                     lines.append(f"  - Error: {error}")
             lines.append("")
-    
+
     if report.selector_risks:
         lines.append("## Selector Risks")
         lines.append("")
@@ -191,14 +612,14 @@ def _generate_markdown_report(report: AIReport) -> str:
             lines.append(f"  - Risk: {risk.risk_reason}")
             lines.append(f"  - Suggestion: {risk.suggestion}")
             lines.append("")
-    
+
     if report.recommendations:
         lines.append("## Recommendations")
         lines.append("")
         for i, rec in enumerate(report.recommendations, 1):
             lines.append(f"{i}. {rec}")
         lines.append("")
-    
+
     lines.append("## Cost Analysis")
     lines.append("")
     lines.append(f"- **Total Cost:** ${report.total_cost:.4f}")
@@ -207,7 +628,7 @@ def _generate_markdown_report(report: AIReport) -> str:
     lines.append(f"- **Model:** {report.model_id}")
     lines.append(f"- **LLM Calls:** {report.llm_calls}")
     lines.append("")
-    
+
     return "\n".join(lines)
 
 
@@ -472,6 +893,27 @@ def reporting_node(state: AgentState) -> AgentState:
     tests_passed_count = len([t for t in test_status if t.get("status") == "passed"])
     tests_failed_count = len([t for t in test_status if t.get("status") == "failed"])
 
+    # Build enhanced report sections with full protection (graceful degradation)
+    logger.info("Building enhanced report sections...")
+    planning_section = None
+    duplicate_section = None
+    priority_section = None
+    coverage_section = None
+    recovery_section = None
+    final_summary_section = None
+
+    try:
+        planning_section = _build_planning_section(state)
+        duplicate_section = _build_duplicate_analysis_section(state)
+        priority_section = _build_priority_stacking_section(state)
+        recovery_section = _build_recovery_log_section(state)
+        final_summary_section = _build_final_summary_section(state, test_status)
+        # Coverage analysis (may use LLM if available)
+        coverage_section = _build_coverage_section(state, bedrock_client=None)
+    except Exception as e:
+        logger.error(f"Enhanced reporting sections failed (non-fatal): {e}")
+        # All sections remain None, basic report still works
+
     # Build AI Report with simplified checkpoints
     report = AIReport(
         session_id=state.get("session_id", "unknown"),
@@ -503,7 +945,14 @@ def reporting_node(state: AgentState) -> AgentState:
         tests_failed_count=tests_failed_count,
         test_status=test_status,
         verification_errors=verification_errors,
-        duration_seconds=None  # Could calculate from started_at
+        duration_seconds=None,  # Could calculate from started_at
+        # Enhanced reporting sections (optional - None if not available)
+        planning=planning_section,
+        duplicate_analysis=duplicate_section,
+        priority_breakdown=priority_section,
+        coverage=coverage_section,
+        recovery_log=recovery_section,
+        final_summary=final_summary_section
     )
     
     # Save comprehensive report as single JSON file

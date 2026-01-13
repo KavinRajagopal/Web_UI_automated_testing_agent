@@ -1,7 +1,7 @@
 {
-  "session_id": "20260111_222039",
+  "session_id": "20260112_203143",
   "module_name": "saucedemo",
-  "created_at": "2026-01-11T22:27:45.614497",
+  "created_at": "2026-01-12T20:37:37.002979",
   "files_generated": [
     "base_page.py",
     "login_page.py",
@@ -19,30 +19,29 @@
   "tests_generated": 10,
   "pages_generated": 3,
   "flows_generated": 2,
-  "verification_passed": false,
+  "verification_passed": true,
   "checkpoints_summary": {
     "A_syntax": "passed",
     "B_imports": "passed",
     "C_collection": "passed",
-    "D_execution": "failed"
+    "D_execution": "passed"
   },
   "selector_risks": [],
   "recommendations": [
-    "Review and fix verification failures before running tests",
-    "Code required 5 recovery attempts - review generated code quality",
+    "Code required 1 recovery attempts - review generated code quality",
     "Only 10/32 test cases were generated - review planning output"
   ],
-  "llm_calls": 21,
-  "total_tokens": 94018,
-  "input_tokens": 52966,
-  "output_tokens": 41052,
-  "input_cost": 0.7945,
-  "output_cost": 3.0789,
-  "total_cost": 3.8734,
+  "llm_calls": 17,
+  "total_tokens": 43842,
+  "input_tokens": 23020,
+  "output_tokens": 20822,
+  "input_cost": 0.3453,
+  "output_cost": 1.5616,
+  "total_cost": 1.9069,
   "model_id": "us.anthropic.claude-opus-4-5-20251101-v1:0",
   "test_execution_results": {
-    "tests_passed": 0,
-    "tests_failed": 1
+    "tests_passed": 10,
+    "tests_failed": 0
   },
   "tests_passed_count": 10,
   "tests_failed_count": 0,
@@ -69,7 +68,7 @@
       "error_summary": null
     },
     {
-      "test_name": "test_login_with_locked_out_user_fails",
+      "test_name": "test_login_with_locked_out_user",
       "file": "tests/test_saucedemo.py",
       "status": "passed",
       "error_type": null,
@@ -118,18 +117,157 @@
       "error_summary": null
     }
   ],
-  "verification_errors": {
-    "D": {
-      "status": "failed",
-      "files_failed": [
-        "tests/test_saucedemo.py"
-      ],
-      "error_count": 1,
-      "errors": {
-        "tests/test_saucedemo.py": "selenium.common.exceptions.TimeoutException: Message:"
-      }
-    }
-  },
+  "verification_errors": {},
   "duration_seconds": null,
-  "markdown_summary": "# Test Generation Report\n\n**Module:** saucedemo\n**Session ID:** 20260111_222039\n**Created:** 2026-01-11 22:27:45.614497\n\n---\n\n## Summary\n\n- **Tests Generated:** 10\n- **Pages Generated:** 3\n- **Flows Generated:** 2\n- **Verification Status:** \u274c FAILED\n\n## Verification Checkpoints\n\n- \u2705 **Checkpoint A_syntax:** PASSED\n- \u2705 **Checkpoint B_imports:** PASSED\n- \u2705 **Checkpoint C_collection:** PASSED\n- \u274c **Checkpoint D_execution:** FAILED\n\n## Test Execution Results\n\n- **Tests Passed:** 10\n- **Tests Failed:** 0\n\n### Test Status\n\n- \u2705 test_valid_login_with_standard_user: passed\n- \u2705 test_invalid_login_with_wrong_password: passed\n- \u2705 test_invalid_login_with_wrong_username: passed\n- \u2705 test_login_with_locked_out_user_fails: passed\n- \u2705 test_login_with_empty_username: passed\n- \u2705 test_login_with_empty_password: passed\n- \u2705 test_login_with_both_fields_empty: passed\n- \u2705 test_login_with_special_characters_in_username: passed\n- \u2705 test_view_products_list_after_login: passed\n- \u2705 test_sort_products_by_name_a_to_z: passed\n\n## Recommendations\n\n1. Review and fix verification failures before running tests\n2. Code required 5 recovery attempts - review generated code quality\n3. Only 10/32 test cases were generated - review planning output\n\n## Cost Analysis\n\n- **Total Cost:** $3.8734\n  - Input tokens: 52,966 ($0.7945)\n  - Output tokens: 41,052 ($3.0789)\n- **Model:** us.anthropic.claude-opus-4-5-20251101-v1:0\n- **LLM Calls:** 21\n"
+  "planning": {
+    "total_test_cases_in_csv": 32,
+    "selected_test_count": 10,
+    "max_test_cap": 10,
+    "selection_reason": "Priority order P0 > P1 > P2, capped at 10 tests"
+  },
+  "duplicate_analysis": {
+    "duplicates_count": 10,
+    "duplicate_pairs": [
+      {
+        "test_id": "TC_LOGIN_003",
+        "duplicate_of": "TC_LOGIN_001",
+        "similarity": 88.4,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_LOGIN_009",
+        "duplicate_of": "TC_LOGIN_001",
+        "similarity": 91.5,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_LOGIN_011",
+        "duplicate_of": "TC_LOGIN_001",
+        "similarity": 85.8,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_LOGIN_010",
+        "duplicate_of": "TC_LOGIN_002",
+        "similarity": 94.1,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_PRODUCTS_009",
+        "duplicate_of": "TC_PRODUCTS_001",
+        "similarity": 93.2,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_PRODUCTS_010",
+        "duplicate_of": "TC_PRODUCTS_001",
+        "similarity": 93.6,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_PRODUCTS_003",
+        "duplicate_of": "TC_PRODUCTS_002",
+        "similarity": 96.7,
+        "recommendation": "merge"
+      },
+      {
+        "test_id": "TC_PRODUCTS_011",
+        "duplicate_of": "TC_PRODUCTS_002",
+        "similarity": 92.9,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_PRODUCTS_005",
+        "duplicate_of": "TC_PRODUCTS_004",
+        "similarity": 92.0,
+        "recommendation": "review"
+      },
+      {
+        "test_id": "TC_CART_005",
+        "duplicate_of": "TC_CART_001",
+        "similarity": 97.7,
+        "recommendation": "merge"
+      }
+    ]
+  },
+  "priority_breakdown": {
+    "p0_count": 9,
+    "p1_count": 10,
+    "p2_count": 3,
+    "p0_selected": [
+      "TC_LOGIN_001",
+      "TC_LOGIN_002",
+      "TC_PRODUCTS_001",
+      "TC_PRODUCTS_006",
+      "TC_PRODUCTS_007",
+      "TC_CART_001",
+      "TC_CART_002",
+      "TC_CART_004",
+      "TC_CHECKOUT_001"
+    ],
+    "p1_selected": [
+      "TC_LOGIN_004"
+    ],
+    "p2_selected": []
+  },
+  "coverage": {
+    "coverage_by_page": {
+      "LoginPage": {
+        "test_count": 3,
+        "test_types_covered": [
+          "positive",
+          "negative"
+        ]
+      },
+      "ProductsPage": {
+        "test_count": 4,
+        "test_types_covered": [
+          "positive"
+        ]
+      },
+      "CartPage": {
+        "test_count": 3,
+        "test_types_covered": [
+          "positive"
+        ]
+      }
+    },
+    "missing_coverage_suggestions": [
+      "LoginPage: Add edge case tests (e.g., empty fields, special characters)",
+      "ProductsPage: Add negative test cases (e.g., invalid input handling)",
+      "ProductsPage: Add edge case tests (e.g., empty fields, special characters)",
+      "CartPage: Add negative test cases (e.g., invalid input handling)",
+      "CartPage: Add edge case tests (e.g., empty fields, special characters)"
+    ],
+    "coverage_analysis_summary": "LoginPage has ~66% test type coverage. ProductsPage has ~33% test type coverage. CartPage has ~33% test type coverage"
+  },
+  "recovery_log": {
+    "total_recovery_attempts": 1,
+    "max_attempts_allowed": 5,
+    "recovery_log": [
+      {
+        "attempt_number": 1,
+        "timestamp": "2026-01-12T20:37:25.416124",
+        "files_fixed": [
+          "pages/login_page.py",
+          "tests/test_saucedemo.py"
+        ],
+        "files_unrecoverable": [
+          "pytest.ini"
+        ],
+        "errors_addressed": 3,
+        "error_details": []
+      }
+    ],
+    "final_status": "success"
+  },
+  "final_summary": {
+    "total_tests_generated": 10,
+    "tests_passed": 10,
+    "tests_failed": 0,
+    "tests_not_run": 0,
+    "failed_test_details": [],
+    "success_rate_percent": 100.0
+  },
+  "markdown_summary": "# Test Generation Report\n\n**Module:** saucedemo\n**Session ID:** 20260112_203143\n**Created:** 2026-01-12 20:37:37.002979\n\n---\n\n## Planning\n\n- **Total Test Cases in CSV:** 32\n- **Selected for Generation:** 10\n- **Max Test Cap:** 10\n- **Selection Method:** Priority order P0 > P1 > P2, capped at 10 tests\n\n## Duplicate Analysis\n\n**10 duplicates identified**\n\n| Test ID | Duplicate Of | Similarity | Recommendation |\n|---------|--------------|------------|----------------|\n| TC_LOGIN_003 | TC_LOGIN_001 | 88.4% | review |\n| TC_LOGIN_009 | TC_LOGIN_001 | 91.5% | review |\n| TC_LOGIN_011 | TC_LOGIN_001 | 85.8% | review |\n| TC_LOGIN_010 | TC_LOGIN_002 | 94.1% | review |\n| TC_PRODUCTS_009 | TC_PRODUCTS_001 | 93.2% | review |\n| TC_PRODUCTS_010 | TC_PRODUCTS_001 | 93.6% | review |\n| TC_PRODUCTS_003 | TC_PRODUCTS_002 | 96.7% | merge |\n| TC_PRODUCTS_011 | TC_PRODUCTS_002 | 92.9% | review |\n| TC_PRODUCTS_005 | TC_PRODUCTS_004 | 92.0% | review |\n| TC_CART_005 | TC_CART_001 | 97.7% | merge |\n\n## Priority Breakdown\n\n- **P0 (Critical):** 9 total, 9 selected\n- **P1 (Major):** 10 total, 1 selected\n- **P2 (Minor):** 3 total, 0 selected\n\n## Summary\n\n- **Tests Generated:** 10\n- **Pages Generated:** 3\n- **Flows Generated:** 2\n- **Verification Status:** \u2705 PASSED\n\n## Verification Checkpoints\n\n- \u2705 **Checkpoint A_syntax:** PASSED\n- \u2705 **Checkpoint B_imports:** PASSED\n- \u2705 **Checkpoint C_collection:** PASSED\n- \u2705 **Checkpoint D_execution:** PASSED\n\n## Coverage Analysis\n\n**Summary:** LoginPage has ~66% test type coverage. ProductsPage has ~33% test type coverage. CartPage has ~33% test type coverage\n\n### By Page\n\n| Page | Tests | Test Types |\n|------|-------|------------|\n| LoginPage | 3 | positive, negative |\n| ProductsPage | 4 | positive |\n| CartPage | 3 | positive |\n\n### Missing Coverage Suggestions\n\n- LoginPage: Add edge case tests (e.g., empty fields, special characters)\n- ProductsPage: Add negative test cases (e.g., invalid input handling)\n- ProductsPage: Add edge case tests (e.g., empty fields, special characters)\n- CartPage: Add negative test cases (e.g., invalid input handling)\n- CartPage: Add edge case tests (e.g., empty fields, special characters)\n\n## Recovery Log\n\n**Total Attempts:** 1/5\n**Final Status:** success\n\n| Attempt | Timestamp | Files Fixed | Errors Addressed |\n|---------|-----------|-------------|------------------|\n| 1 | 2026-01-12T20:37:25 | 2 | 3 |\n\n## Final Summary\n\n- **Total Tests Generated:** 10\n- **Tests Passed:** 10\n- **Tests Failed:** 0\n- **Tests Not Run:** 0\n- **Success Rate:** 100.0%\n\n## Test Execution Results\n\n- **Tests Passed:** 10\n- **Tests Failed:** 0\n\n### Test Status\n\n- \u2705 test_valid_login_with_standard_user: passed\n- \u2705 test_invalid_login_with_wrong_password: passed\n- \u2705 test_invalid_login_with_wrong_username: passed\n- \u2705 test_login_with_locked_out_user: passed\n- \u2705 test_login_with_empty_username: passed\n- \u2705 test_login_with_empty_password: passed\n- \u2705 test_login_with_both_fields_empty: passed\n- \u2705 test_login_with_special_characters_in_username: passed\n- \u2705 test_view_products_list_after_login: passed\n- \u2705 test_sort_products_by_name_a_to_z: passed\n\n## Recommendations\n\n1. Code required 1 recovery attempts - review generated code quality\n2. Only 10/32 test cases were generated - review planning output\n\n## Cost Analysis\n\n- **Total Cost:** $1.9069\n  - Input tokens: 23,020 ($0.3453)\n  - Output tokens: 20,822 ($1.5616)\n- **Model:** us.anthropic.claude-opus-4-5-20251101-v1:0\n- **LLM Calls:** 17\n"
 }

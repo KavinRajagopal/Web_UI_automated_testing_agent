@@ -1,18 +1,18 @@
 {
-  "session_id": "20260111_222039",
-  "started_at": "2026-01-11T22:20:39.017677",
-  "completed_at": "2026-01-11T22:27:45.616063",
-  "status": "failed",
+  "session_id": "20260112_203143",
+  "started_at": "2026-01-12T20:31:43.061202",
+  "completed_at": "2026-01-12T20:37:37.004554",
+  "status": "success",
   "events": [
     {
-      "timestamp": "2026-01-11T22:20:39.018373",
+      "timestamp": "2026-01-12T20:31:43.061879",
       "event_type": "node_start",
       "node": "analyze_inputs",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:20:39.101043",
+      "timestamp": "2026-01-12T20:31:43.144847",
       "event_type": "analysis_complete",
       "node": "analyze_inputs",
       "level": "info",
@@ -29,68 +29,81 @@
       }
     },
     {
-      "timestamp": "2026-01-11T22:20:39.101377",
+      "timestamp": "2026-01-12T20:31:43.145164",
       "event_type": "node_complete",
       "node": "analyze_inputs",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:20:39.101785",
+      "timestamp": "2026-01-12T20:31:43.145555",
+      "event_type": "node_start",
+      "node": "human_gate",
+      "level": "info",
+      "data": {}
+    },
+    {
+      "timestamp": "2026-01-12T20:33:42.139482",
       "event_type": "human_approval",
       "node": "human_gate",
       "level": "info",
       "data": {
         "approved": true,
-        "auto_approved": true,
         "tests_count": 10
       }
     },
     {
-      "timestamp": "2026-01-11T22:21:19.571179",
+      "timestamp": "2026-01-12T20:33:42.145514",
+      "event_type": "node_complete",
+      "node": "human_gate",
+      "level": "info",
+      "data": {}
+    },
+    {
+      "timestamp": "2026-01-12T20:34:21.670950",
       "event_type": "node_start",
       "node": "generation",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:21:29.225909",
+      "timestamp": "2026-01-12T20:34:30.854303",
       "event_type": "file_generated",
       "node": "generation",
       "level": "info",
       "data": {
         "filepath": "pages/login_page.py",
         "type": "page_object",
-        "methods_count": 12,
+        "methods_count": 11,
         "locators_count": 8
       }
     },
     {
-      "timestamp": "2026-01-11T22:21:45.758023",
+      "timestamp": "2026-01-12T20:34:58.359456",
       "event_type": "file_generated",
       "node": "generation",
       "level": "info",
       "data": {
         "filepath": "pages/products_page.py",
         "type": "page_object",
-        "methods_count": 18,
+        "methods_count": 14,
         "locators_count": 45
       }
     },
     {
-      "timestamp": "2026-01-11T22:21:58.246905",
+      "timestamp": "2026-01-12T20:35:17.208739",
       "event_type": "file_generated",
       "node": "generation",
       "level": "info",
       "data": {
         "filepath": "pages/cart_page.py",
         "type": "page_object",
-        "methods_count": 16,
+        "methods_count": 15,
         "locators_count": 45
       }
     },
     {
-      "timestamp": "2026-01-11T22:21:58.247012",
+      "timestamp": "2026-01-12T20:35:17.209104",
       "event_type": "file_generated",
       "node": "generation",
       "level": "info",
@@ -100,7 +113,7 @@
       }
     },
     {
-      "timestamp": "2026-01-11T22:21:58.247051",
+      "timestamp": "2026-01-12T20:35:17.209225",
       "event_type": "file_generated",
       "node": "generation",
       "level": "info",
@@ -110,7 +123,7 @@
       }
     },
     {
-      "timestamp": "2026-01-11T22:22:56.304534",
+      "timestamp": "2026-01-12T20:36:24.161397",
       "event_type": "file_generated",
       "node": "generation",
       "level": "info",
@@ -121,7 +134,7 @@
       }
     },
     {
-      "timestamp": "2026-01-11T22:22:56.316674",
+      "timestamp": "2026-01-12T20:36:24.164100",
       "event_type": "generation_complete",
       "node": "generation",
       "level": "info",
@@ -129,26 +142,26 @@
         "files_count": 12,
         "errors_count": 0,
         "llm_calls": 13,
-        "llm_tokens": 18668,
+        "llm_tokens": 18653,
         "validation_issues": 0
       }
     },
     {
-      "timestamp": "2026-01-11T22:22:56.317478",
+      "timestamp": "2026-01-12T20:36:24.164302",
       "event_type": "node_complete",
       "node": "generation",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:22:56.323102",
+      "timestamp": "2026-01-12T20:36:24.166751",
       "event_type": "node_start",
       "node": "verification",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:22:57.010744",
+      "timestamp": "2026-01-12T20:36:24.783852",
       "event_type": "verification_result",
       "node": "verification",
       "level": "info",
@@ -162,21 +175,21 @@
       }
     },
     {
-      "timestamp": "2026-01-11T22:22:57.010847",
+      "timestamp": "2026-01-12T20:36:24.783956",
       "event_type": "node_complete",
       "node": "verification",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:22:57.011789",
+      "timestamp": "2026-01-12T20:36:24.784737",
       "event_type": "node_start",
       "node": "recovery",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:23:52.312904",
+      "timestamp": "2026-01-12T20:37:25.416124",
       "event_type": "recovery_attempt",
       "node": "recovery",
       "level": "info",
@@ -193,21 +206,21 @@
       }
     },
     {
-      "timestamp": "2026-01-11T22:23:52.313000",
+      "timestamp": "2026-01-12T20:37:25.416262",
       "event_type": "node_complete",
       "node": "recovery",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:23:52.314790",
+      "timestamp": "2026-01-12T20:37:25.419530",
       "event_type": "node_start",
       "node": "verification",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:24:04.954157",
+      "timestamp": "2026-01-12T20:37:36.999605",
       "event_type": "verification_result",
       "node": "verification",
       "level": "info",
@@ -215,244 +228,20 @@
         "syntax_check": "passed",
         "import_check": "passed",
         "pytest_collect": "passed",
-        "pytest_run": "failed",
-        "all_passed": false,
-        "errors_count": 1
+        "pytest_run": "passed",
+        "all_passed": true,
+        "errors_count": 0
       }
     },
     {
-      "timestamp": "2026-01-11T22:24:04.954261",
+      "timestamp": "2026-01-12T20:37:36.999731",
       "event_type": "node_complete",
       "node": "verification",
       "level": "info",
       "data": {}
     },
     {
-      "timestamp": "2026-01-11T22:24:04.955075",
-      "event_type": "node_start",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:24:47.653240",
-      "event_type": "recovery_attempt",
-      "node": "recovery",
-      "level": "info",
-      "data": {
-        "attempt": 2,
-        "files_fixed": [
-          "tests/test_saucedemo.py"
-        ],
-        "files_unrecoverable": [],
-        "errors_addressed": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:24:47.653538",
-      "event_type": "node_complete",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:24:47.658723",
-      "event_type": "node_start",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:24:59.623918",
-      "event_type": "verification_result",
-      "node": "verification",
-      "level": "info",
-      "data": {
-        "syntax_check": "passed",
-        "import_check": "passed",
-        "pytest_collect": "passed",
-        "pytest_run": "failed",
-        "all_passed": false,
-        "errors_count": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:24:59.624054",
-      "event_type": "node_complete",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:24:59.624900",
-      "event_type": "node_start",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:25:43.818924",
-      "event_type": "recovery_attempt",
-      "node": "recovery",
-      "level": "info",
-      "data": {
-        "attempt": 3,
-        "files_fixed": [
-          "tests/test_saucedemo.py"
-        ],
-        "files_unrecoverable": [],
-        "errors_addressed": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:25:43.819079",
-      "event_type": "node_complete",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:25:43.822184",
-      "event_type": "node_start",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:25:55.939441",
-      "event_type": "verification_result",
-      "node": "verification",
-      "level": "info",
-      "data": {
-        "syntax_check": "passed",
-        "import_check": "passed",
-        "pytest_collect": "passed",
-        "pytest_run": "failed",
-        "all_passed": false,
-        "errors_count": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:25:55.939550",
-      "event_type": "node_complete",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:25:55.940492",
-      "event_type": "node_start",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:26:39.289129",
-      "event_type": "recovery_attempt",
-      "node": "recovery",
-      "level": "info",
-      "data": {
-        "attempt": 4,
-        "files_fixed": [
-          "tests/test_saucedemo.py"
-        ],
-        "files_unrecoverable": [],
-        "errors_addressed": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:26:39.289325",
-      "event_type": "node_complete",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:26:39.291592",
-      "event_type": "node_start",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:26:51.456374",
-      "event_type": "verification_result",
-      "node": "verification",
-      "level": "info",
-      "data": {
-        "syntax_check": "passed",
-        "import_check": "passed",
-        "pytest_collect": "passed",
-        "pytest_run": "failed",
-        "all_passed": false,
-        "errors_count": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:26:51.456512",
-      "event_type": "node_complete",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:26:51.457374",
-      "event_type": "node_start",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:27:33.618751",
-      "event_type": "recovery_attempt",
-      "node": "recovery",
-      "level": "info",
-      "data": {
-        "attempt": 5,
-        "files_fixed": [
-          "tests/test_saucedemo.py"
-        ],
-        "files_unrecoverable": [],
-        "errors_addressed": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:27:33.618896",
-      "event_type": "node_complete",
-      "node": "recovery",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:27:33.621377",
-      "event_type": "node_start",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:27:45.611010",
-      "event_type": "verification_result",
-      "node": "verification",
-      "level": "info",
-      "data": {
-        "syntax_check": "passed",
-        "import_check": "passed",
-        "pytest_collect": "passed",
-        "pytest_run": "failed",
-        "all_passed": false,
-        "errors_count": 1
-      }
-    },
-    {
-      "timestamp": "2026-01-11T22:27:45.611118",
-      "event_type": "node_complete",
-      "node": "verification",
-      "level": "info",
-      "data": {}
-    },
-    {
-      "timestamp": "2026-01-11T22:27:45.612211",
+      "timestamp": "2026-01-12T20:37:37.000631",
       "event_type": "node_start",
       "node": "reporting",
       "level": "info",
@@ -460,27 +249,19 @@
     }
   ],
   "summary": {
-    "total_events": 47,
+    "total_events": 25,
     "llm_calls": 0,
     "total_input_tokens": 0,
     "total_output_tokens": 0,
     "errors_count": 0,
-    "recovery_attempts": 5,
-    "verification_passed": false,
+    "recovery_attempts": 1,
+    "verification_passed": true,
     "files_generated": 12,
     "nodes_executed": [
       "analyze_inputs",
       "human_gate",
       "planning",
       "generation",
-      "verification",
-      "recovery",
-      "verification",
-      "recovery",
-      "verification",
-      "recovery",
-      "verification",
-      "recovery",
       "verification",
       "recovery",
       "verification",

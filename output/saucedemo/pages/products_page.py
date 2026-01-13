@@ -10,7 +10,7 @@ from pages.base_page import BasePage
 
 
 class ProductsPage(BasePage):
-    """Page object for the Products/Inventory page."""
+    """Page Object for the Products/Inventory page of Sauce Demo."""
 
 
     # Element Locators (auto-generated from metadata)
@@ -68,33 +68,30 @@ class ProductsPage(BasePage):
         """
         super().__init__(driver)
 
-    def is_page_loaded(self, timeout: int = 10) -> bool:
+    def is_page_loaded(self) -> bool:
         """
-        Check if the products page is fully loaded.
-
-        Args:
-            timeout: Maximum time to wait for elements
+        Check if the Products page is fully loaded.
 
         Returns:
             bool: True if required elements are present, False otherwise
         """
-        return self.is_element_present(*self.INVENTORY_CONTAINER, timeout=timeout)
+        return self.is_element_present(*self.INVENTORY_CONTAINER, timeout=10)
 
     def is_on_page(self) -> bool:
         """
         Alias for is_page_loaded().
 
         Returns:
-            bool: True if on products page, False otherwise
+            bool: True if on the Products page, False otherwise
         """
         return self.is_page_loaded()
 
     def is_products_page_displayed(self) -> bool:
         """
-        Check if the products page is displayed.
+        Check if the Products page is displayed.
 
         Returns:
-            bool: True if products page is displayed, False otherwise
+            bool: True if the products page is displayed, False otherwise
         """
         return self.is_page_loaded()
 
@@ -114,141 +111,103 @@ class ProductsPage(BasePage):
         Returns:
             bool: True if inventory container is visible, False otherwise
         """
-        return self.is_element_present(*self.INVENTORY_CONTAINER)
+        return self.is_element_present(*self.INVENTORY_CONTAINER, timeout=5)
+
+    def get_product_count(self) -> int:
+        """
+        Get the total count of products displayed.
+
+        Returns:
+            int: Number of products on the page
+        """
+        products = self.driver.find_elements(*self.INVENTORY_ITEM)
+        return len(products)
 
     def get_all_product_names(self) -> List[str]:
         """
         Get all product names displayed on the page.
 
         Returns:
-            List[str]: List of product names
+            List[str]: List of all product names
         """
-        elements = self.driver.find_elements(*self.INVENTORY_ITEM_NAME)
-        return [element.text for element in elements]
+        name_elements = self.driver.find_elements(*self.INVENTORY_ITEM_NAME)
+        return [element.text for element in name_elements]
 
     def get_all_product_prices(self) -> List[str]:
         """
         Get all product prices displayed on the page.
 
         Returns:
-            List[str]: List of product prices as strings (e.g., '$29.99')
+            List[str]: List of all product prices as strings
         """
-        elements = self.driver.find_elements(*self.INVENTORY_ITEM_PRICE)
-        return [element.text for element in elements]
-
-    def get_product_count(self) -> int:
-        """
-        Get the count of products displayed on the page.
-
-        Returns:
-            int: Number of products displayed
-        """
-        elements = self.driver.find_elements(*self.INVENTORY_ITEM)
-        return len(elements)
-
-    def select_sort_option(self, option_value: str) -> None:
-        """
-        Select a sort option from the dropdown.
-
-        Args:
-            option_value: The value of the sort option to select
-                         (e.g., 'az', 'za', 'lohi', 'hilo')
-        """
-        dropdown = self.find_element_clickable(*self.PRODUCT_SORT_CONTAINER)
-        select = Select(dropdown)
-        select.select_by_value(option_value)
-
-    def get_active_sort_option(self) -> str:
-        """
-        Get the currently active sort option text.
-
-        Returns:
-            str: The text of the active sort option
-        """
-        return self.get_element_text(*self.ACTIVE_OPTION)
+        price_elements = self.driver.find_elements(*self.INVENTORY_ITEM_PRICE)
+        return [element.text for element in price_elements]
 
     def add_product_to_cart(self, product_name: str) -> None:
         """
-        Add a product to the cart by product name.
+        Add a specific product to the cart by name.
 
         Args:
-            product_name: Name of the product to add (case-insensitive partial match)
+            product_name: Name of the product to add (e.g., 'Sauce Labs Backpack')
         """
-        product_name_lower = product_name.lower()
+        product_mapping = {
+            "sauce labs backpack": self.ADD_TO_CART_SAUCE_LABS_BACKPACK,
+            "sauce labs bike light": self.ADD_TO_CART_SAUCE_LABS_BIKE_LIGHT,
+            "sauce labs bolt t-shirt": self.ADD_TO_CART_SAUCE_LABS_BOLT_T_SHIRT,
+            "sauce labs fleece jacket": self.ADD_TO_CART_SAUCE_LABS_FLEECE_JACKET,
+            "sauce labs onesie": self.ADD_TO_CART_SAUCE_LABS_ONESIE,
+            "test.allthethings() t-shirt (red)": self.ADD_TO_CART_TEST_ALLTHETHINGS__T_SHIRT__RED,
+        }
 
-        if "backpack" in product_name_lower:
-            self.click(*self.ADD_TO_CART_SAUCE_LABS_BACKPACK)
-        elif "bike light" in product_name_lower:
-            self.click(*self.ADD_TO_CART_SAUCE_LABS_BIKE_LIGHT)
-        elif "bolt" in product_name_lower and "t-shirt" in product_name_lower:
-            self.click(*self.ADD_TO_CART_SAUCE_LABS_BOLT_T_SHIRT)
-        elif "fleece" in product_name_lower or "jacket" in product_name_lower:
-            self.click(*self.ADD_TO_CART_SAUCE_LABS_FLEECE_JACKET)
-        elif "onesie" in product_name_lower:
-            self.click(*self.ADD_TO_CART_SAUCE_LABS_ONESIE)
-        elif "red" in product_name_lower or "allthethings" in product_name_lower:
-            self.click(*self.ADD_TO_CART_TEST_ALLTHETHINGS__T_SHIRT__RED)
+        normalized_name = product_name.lower()
+        if normalized_name in product_mapping:
+            locator = product_mapping[normalized_name]
+            self.click(*locator)
         else:
-            raise ValueError(f"Product '{product_name}' not found")
+            raise ValueError(f"Product '{product_name}' not found in product mapping")
 
     def click_shopping_cart(self) -> None:
-        """Click the shopping cart link to navigate to the cart page."""
+        """
+        Click on the shopping cart link to navigate to the cart page.
+        """
         self.click(*self.SHOPPING_CART_LINK)
 
-    def open_burger_menu(self) -> None:
-        """Open the burger menu by clicking the menu button."""
-        self.click(*self.REACT_BURGER_MENU_BTN)
-
-    def are_products_sorted_az(self) -> bool:
+    def select_sort_option(self, sort_option: str) -> None:
         """
-        Check if products are sorted alphabetically A to Z.
-
-        Returns:
-            bool: True if products are sorted A-Z, False otherwise
-        """
-        names = self.get_all_product_names()
-        return names == sorted(names)
-
-    def are_products_sorted_za(self) -> bool:
-        """
-        Check if products are sorted alphabetically Z to A.
-
-        Returns:
-            bool: True if products are sorted Z-A, False otherwise
-        """
-        names = self.get_all_product_names()
-        return names == sorted(names, reverse=True)
-
-    def _parse_price(self, price_str: str) -> float:
-        """
-        Parse a price string to a float value.
+        Select a sort option from the product sort dropdown.
 
         Args:
-            price_str: Price string (e.g., '$29.99')
+            sort_option: The sort option value to select
+                        (e.g., 'az', 'za', 'lohi', 'hilo')
+        """
+        dropdown_element = self.find_element_clickable(*self.PRODUCT_SORT_CONTAINER)
+        select = Select(dropdown_element)
+        select.select_by_value(sort_option)
+
+    def get_active_sort_option(self) -> str:
+        """
+        Get the currently active sort option.
 
         Returns:
-            float: Numeric price value
+            str: The text of the currently selected sort option
         """
-        return float(price_str.replace('$', ''))
+        return self.get_element_text(*self.ACTIVE_OPTION)
 
-    def are_products_sorted_price_low_high(self) -> bool:
+    def get_products_sorted_by_name(self, ascending: bool = True) -> List[str]:
         """
-        Check if products are sorted by price from low to high.
+        Get product names sorted alphabetically.
 
-        Returns:
-            bool: True if products are sorted by price low to high, False otherwise
-        """
-        prices = self.get_all_product_prices()
-        numeric_prices = [self._parse_price(p) for p in prices]
-        return numeric_prices == sorted(numeric_prices)
-
-    def are_products_sorted_price_high_low(self) -> bool:
-        """
-        Check if products are sorted by price from high to low.
+        Args:
+            ascending: If True, sort A-Z; if False, sort Z-A
 
         Returns:
-            bool: True if products are sorted by price high to low, False otherwise
+            List[str]: List of product names sorted as specified
         """
-        prices = self.get_all_product_prices()
-        numeric_prices = [self._parse_price(p) for p in prices]
-        return numeric_prices == sorted(numeric_prices, reverse=True)
+        product_names = self.get_all_product_names()
+        return sorted(product_names, reverse=not ascending)
+
+    def open_burger_menu(self) -> None:
+        """
+        Open the burger menu by clicking the menu button.
+        """
+        self.click(*self.REACT_BURGER_MENU_BTN)

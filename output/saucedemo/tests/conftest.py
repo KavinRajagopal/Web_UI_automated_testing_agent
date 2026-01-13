@@ -36,7 +36,7 @@ def driver(request):
             headless = headless_env.lower() == "true"
         else:
             # Use state default (from agent configuration)
-            headless = True  # This will be replaced by .format()
+            headless = False  # This will be replaced by .format()
     else:
         headless = headless.lower() == "true"
     

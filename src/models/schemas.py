@@ -489,9 +489,90 @@ class SelectorRisk(BaseModel):
     element_name: str
     selector_type: str
     selector_value: str
-    
+
     risk_reason: str = Field(..., description="Why this is risky")
     suggestion: Optional[str] = Field(None, description="How to improve")
+
+
+# =============================================================================
+# ENHANCED REPORTING MODELS
+# =============================================================================
+
+class PlanningSection(BaseModel):
+    """Planning section for report - test case selection info."""
+    total_test_cases_in_csv: int = Field(default=0, description="Total test cases found in CSV")
+    selected_test_count: int = Field(default=0, description="Number of tests selected for generation")
+    max_test_cap: int = Field(default=10, description="Maximum test case cap")
+    selection_reason: str = Field(default="", description="How tests were selected (e.g., 'P0 > P1 > P2 priority, max 10')")
+
+
+class DuplicateAnalysisSection(BaseModel):
+    """Duplicate analysis section for report."""
+    duplicates_count: int = Field(default=0, description="Total duplicates found")
+    duplicate_pairs: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of duplicate pairs: [{test_id, duplicate_of, similarity, recommendation}]"
+    )
+
+
+class PriorityStackingSection(BaseModel):
+    """Priority breakdown section for report."""
+    p0_count: int = Field(default=0, description="Number of P0 (critical) tests in CSV")
+    p1_count: int = Field(default=0, description="Number of P1 (major) tests in CSV")
+    p2_count: int = Field(default=0, description="Number of P2 (minor) tests in CSV")
+    p0_selected: List[str] = Field(default_factory=list, description="P0 test IDs selected for generation")
+    p1_selected: List[str] = Field(default_factory=list, description="P1 test IDs selected for generation")
+    p2_selected: List[str] = Field(default_factory=list, description="P2 test IDs selected for generation")
+
+
+class CoverageSection(BaseModel):
+    """Coverage analysis section for report (LLM-based test type analysis)."""
+    coverage_by_page: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Coverage metrics per page: {page_name: {test_count, test_types_covered}}"
+    )
+    missing_coverage_suggestions: List[str] = Field(
+        default_factory=list,
+        description="LLM-generated suggestions like 'Login has no wrong password test'"
+    )
+    coverage_analysis_summary: str = Field(
+        default="",
+        description="LLM analysis summary of test coverage gaps"
+    )
+
+
+class RecoveryLogEntry(BaseModel):
+    """Single recovery attempt log entry."""
+    attempt_number: int = Field(..., description="Recovery attempt number (1-10)")
+    timestamp: str = Field(default="", description="ISO timestamp of attempt")
+    files_fixed: List[str] = Field(default_factory=list, description="Files successfully fixed")
+    files_unrecoverable: List[str] = Field(default_factory=list, description="Files that couldn't be fixed")
+    errors_addressed: int = Field(default=0, description="Number of errors addressed")
+    error_details: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Details of errors: [{file, error_type, error_message}]"
+    )
+
+
+class RecoveryLogSection(BaseModel):
+    """Full recovery log section for report."""
+    total_recovery_attempts: int = Field(default=0, description="Total recovery attempts made")
+    max_attempts_allowed: int = Field(default=5, description="Maximum attempts allowed")
+    recovery_log: List[RecoveryLogEntry] = Field(default_factory=list, description="List of all recovery attempts")
+    final_status: str = Field(default="", description="Final recovery status: success, partial, failed, exhausted")
+
+
+class FinalSummarySection(BaseModel):
+    """Enhanced final summary section."""
+    total_tests_generated: int = Field(default=0, description="Total tests generated")
+    tests_passed: int = Field(default=0, description="Number of tests passed")
+    tests_failed: int = Field(default=0, description="Number of tests failed")
+    tests_not_run: int = Field(default=0, description="Number of tests not run")
+    failed_test_details: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Details for each failed test: [{test_name, file, error_type, error_summary}]"
+    )
+    success_rate_percent: float = Field(default=0.0, description="Test pass rate as percentage")
 
 
 class AIReport(BaseModel):
@@ -550,6 +631,14 @@ class AIReport(BaseModel):
     
     # Timing
     duration_seconds: Optional[float] = None
+
+    # Enhanced reporting sections (optional - graceful degradation if not available)
+    planning: Optional["PlanningSection"] = Field(default=None, description="Test case planning details")
+    duplicate_analysis: Optional["DuplicateAnalysisSection"] = Field(default=None, description="Duplicate test case analysis")
+    priority_breakdown: Optional["PriorityStackingSection"] = Field(default=None, description="Priority breakdown and selection")
+    coverage: Optional["CoverageSection"] = Field(default=None, description="Test coverage analysis")
+    recovery_log: Optional["RecoveryLogSection"] = Field(default=None, description="Detailed recovery attempt log")
+    final_summary: Optional["FinalSummarySection"] = Field(default=None, description="Enhanced final summary")
 
 
 class TestCasePriority(BaseModel):
