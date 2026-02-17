@@ -32,11 +32,45 @@ from .nodes.verification import verification_node
 from .nodes.recovery import recovery_node, should_retry_verification
 from .nodes.reporting import reporting_node
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Configure logging with file output
+def setup_logging(verbose: bool = False) -> str:
+    """
+    Setup logging to both console and timestamped file.
+
+    Returns:
+        Path to the log file
+    """
+    # Create logs directory
+    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Generate timestamped filename (YYYY-MM-DD_HH-MM)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    log_file = os.path.join(log_dir, f"agent_run_{timestamp}.log")
+
+    # Configure root logger
+    log_level = logging.DEBUG if verbose else logging.INFO
+
+    # Clear any existing handlers
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.setLevel(log_level)
+
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    root_logger.addHandler(console_handler)
+
+    # File handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    root_logger.addHandler(file_handler)
+
+    return log_file
+
+# Setup default logging (will be reconfigured in main() with proper settings)
 logger = logging.getLogger(__name__)
 
 
@@ -456,11 +490,11 @@ Examples:
     )
     
     args = parser.parse_args()
-    
-    # Configure logging
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-    
+
+    # Configure logging with file output
+    log_file = setup_logging(verbose=args.verbose)
+    logger.info(f"Logging to file: {log_file}")
+
     # Create and run agent
     agent = TestGenerationAgent(
         inputs_path=args.inputs,

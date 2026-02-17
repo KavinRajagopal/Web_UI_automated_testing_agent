@@ -5,20 +5,41 @@ This node:
 2. Groups tests by page/flow
 3. Creates a GenerationPlan with file structure
 4. Identifies shared utilities and fixtures
+
+Supports multiple platforms:
+- Web (Selenium)
+- Android (Appium)
 """
 
 import json
 import logging
+import re
 from typing import Dict, List, Any
 
 from ..models.state import AgentState
 from ..models.schemas import GenerationPlan, PagePlan, FlowPlan, TestPlan
 from ..llm.bedrock_client import BedrockClient
+from ..templates import is_mobile_platform
 
 logger = logging.getLogger(__name__)
 
 
-PLANNING_SYSTEM_PROMPT = """You are an expert test automation architect. Your task is to analyze manual test cases and UI element metadata, then create a comprehensive code generation plan.
+def _camel_to_snake(name: str) -> str:
+    """Convert CamelCase to snake_case.
+
+    Args:
+        name: CamelCase string (e.g., 'ProductsScreen')
+
+    Returns:
+        snake_case string (e.g., 'products_screen')
+    """
+    # Insert underscore before uppercase letters and lowercase everything
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+# Base planning system prompt (common structure)
+PLANNING_SYSTEM_PROMPT_BASE = """You are an expert test automation architect. Your task is to analyze manual test cases and UI element metadata, then create a comprehensive code generation plan.
 
 OUTPUT FORMAT:
 Return a JSON object with this structure:
@@ -29,7 +50,13 @@ Return a JSON object with this structure:
             "page_name": "LoginPage",
             "file_name": "pages/login_page.py",
             "elements": ["username_input", "password_input", "login_button"],
-            "methods": ["enter_username", "enter_password", "click_login", "get_error_message"],
+            "methods": [
+                {"name": "enter_username", "params": ["text: str"], "returns": "self", "description": "Enter username in input field"},
+                {"name": "enter_password", "params": ["text: str"], "returns": "self", "description": "Enter password in input field"},
+                {"name": "click_login", "params": [], "returns": "self", "description": "Click the login button"},
+                {"name": "get_error_message", "params": [], "returns": "str", "description": "Get error message text if displayed"},
+                {"name": "is_error_displayed", "params": [], "returns": "bool", "description": "Check if error message is visible"}
+            ],
             "inherits_from": "BasePage",
             "description": "Page object for login page"
         }
@@ -50,12 +77,24 @@ Return a JSON object with this structure:
             "flow_used": "AuthFlow",
             "pages_used": ["LoginPage", "ProductsPage"],
             "steps_summary": ["Navigate to login", "Enter credentials", "Verify redirect"],
+            "method_calls": [
+                {"page": "LoginPage", "method": "enter_username", "args": ["standard_user"]},
+                {"page": "LoginPage", "method": "enter_password", "args": ["secret_sauce"]},
+                {"page": "LoginPage", "method": "click_login", "args": []}
+            ],
             "markers": ["smoke", "login"],
             "description": "Test valid login with correct credentials"
         }
     ],
     "conftest_fixtures": ["driver", "base_url", "login_user"]
 }
+
+CRITICAL - METHOD CONTRACTS:
+The "methods" field in pages MUST use the detailed format with name/params/returns/description.
+This ensures both page generation AND test generation use the EXACT SAME method names.
+
+The "method_calls" field in tests specifies which page methods each test will call.
+This creates a contract between pages and tests to prevent method name mismatches.
 
 GUIDELINES:
 1. Create one Page Object class per unique page
@@ -64,7 +103,86 @@ GUIDELINES:
 4. Use pytest markers from test case tags
 5. Include all elements referenced in test steps
 6. Generate helper methods for common interactions
-7. Follow Python naming conventions (snake_case)"""
+7. Follow Python naming conventions (snake_case)
+8. Method names MUST be consistent across pages and tests"""
+
+
+# Web/Selenium specific guidelines
+PLANNING_SYSTEM_PROMPT_WEB = PLANNING_SYSTEM_PROMPT_BASE + """
+
+PLATFORM: Web (Selenium)
+- Use Selenium WebDriver for browser automation
+- Page objects should inherit from BasePage
+- Constructor signature: __init__(self, driver, base_url)
+- Use methods like enter_text(), click(), find_element_visible()
+- Default fixtures: driver, base_url
+
+AVAILABLE BASEPAGE METHODS (use these in your method_calls):
+- navigate(path="") -> None
+- find_element(by, value) -> WebElement
+- find_element_clickable(by, value) -> WebElement
+- find_element_visible(by, value) -> WebElement
+- is_element_present(by, value, timeout=5) -> bool
+- get_element_text(by, value) -> str
+- enter_text(by, value, text) -> None
+- click(by, value) -> None
+
+IMPORTANT: DO NOT use wait_for_* methods - they don't exist! Use find_* methods instead."""
+
+
+# Android/Appium specific guidelines
+PLANNING_SYSTEM_PROMPT_ANDROID = PLANNING_SYSTEM_PROMPT_BASE + """
+
+PLATFORM: Android (Appium)
+- Use Appium with UiAutomator2 for Android automation
+- Page objects should inherit from BasePage
+- Constructor signature: __init__(self, driver)  # NO base_url for mobile
+- Use AppiumBy locators: ACCESSIBILITY_ID, ID, XPATH (NO CSS selectors)
+- Use mobile methods like tap(), swipe_up(), hide_keyboard()
+- Call hide_keyboard() after text input
+- Default fixtures: driver, appium_server
+- Use "Screen" suffix for page names (e.g., LoginScreen instead of LoginPage)
+
+AVAILABLE BASEPAGE METHODS (use these in your method_calls):
+- find_element(by, value) -> WebElement
+- find_element_clickable(by, value) -> WebElement
+- find_element_visible(by, value) -> WebElement
+- is_element_present(by, value, timeout=5) -> bool
+- get_element_text(by, value) -> str
+- tap(by, value) -> None
+- click(by, value) -> None (alias for tap)
+- enter_text(by, value, text) -> None
+- clear_text(by, value) -> None
+- hide_keyboard() -> None
+- swipe_up(percent=0.5) -> None
+- swipe_down(percent=0.5) -> None
+- scroll_to_element(by, value, max_swipes=5) -> Optional[WebElement]
+
+MOBILE-SPECIFIC GUIDELINES:
+1. NO CSS selectors - use accessibility_id, id, or xpath only
+2. Add hide_keyboard() calls after text input methods
+3. Use tap() instead of click() for buttons
+4. Consider swipe gestures for scrolling content
+5. Page objects don't need base_url parameter
+6. DO NOT use wait_for_* methods - they don't exist! Use find_* methods instead."""
+
+
+def _get_planning_system_prompt(platform_type: str) -> str:
+    """Get platform-specific planning system prompt.
+
+    Args:
+        platform_type: 'web' or 'android'
+
+    Returns:
+        Planning system prompt string
+    """
+    if is_mobile_platform(platform_type):
+        return PLANNING_SYSTEM_PROMPT_ANDROID
+    return PLANNING_SYSTEM_PROMPT_WEB
+
+
+# Backward compatibility alias
+PLANNING_SYSTEM_PROMPT = PLANNING_SYSTEM_PROMPT_WEB
 
 
 MAX_TEST_CASES_PER_BATCH = 10  # Limit test cases to keep LLM responses fast and accurate
@@ -73,27 +191,45 @@ MAX_TEST_CASES_PER_BATCH = 10  # Limit test cases to keep LLM responses fast and
 def _build_planning_prompt(state: AgentState) -> str:
     """
     Build the prompt for planning.
-    
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Planning prompt string
     """
     module_spec = state.get("module_spec", {})
     all_test_cases = state.get("test_cases", [])
     page_metadata = state.get("page_metadata", {})
-    
+
+    # Get platform type
+    platform_type = state.get("platform_type", module_spec.get("platform_type", "web"))
+    is_mobile = is_mobile_platform(platform_type)
+
     # Limit test cases to keep responses manageable
     test_cases = all_test_cases[:MAX_TEST_CASES_PER_BATCH]
     if len(all_test_cases) > MAX_TEST_CASES_PER_BATCH:
         logger.info(f"Limiting to {MAX_TEST_CASES_PER_BATCH} test cases (of {len(all_test_cases)} total)")
-    
-    # Format module info
-    module_info = f"""
+
+    # Format module info - platform-aware
+    if is_mobile:
+        android_config = module_spec.get("android_config", {})
+        module_info = f"""
 ## Module Information
 - Name: {module_spec.get('module_name', 'unknown')}
 - App: {module_spec.get('app_name', 'unknown')}
+- Platform: Android (Appium)
+- App Package: {android_config.get('app_package', 'unknown')}
+- App Activity: {android_config.get('app_activity', 'unknown')}
+- Device: {android_config.get('device_name', 'Android Emulator')}
+- Automation: {android_config.get('automation_name', 'UiAutomator2')}
+"""
+    else:
+        module_info = f"""
+## Module Information
+- Name: {module_spec.get('module_name', 'unknown')}
+- App: {module_spec.get('app_name', 'unknown')}
+- Platform: Web (Selenium)
 - URL: {module_spec.get('app_url', 'unknown')}
 - Browser: {module_spec.get('browser', 'chrome')}
 """
@@ -159,26 +295,36 @@ Return ONLY valid JSON matching the specified format."""
 def planning_node(state: AgentState) -> AgentState:
     """
     Planning node - creates code generation plan using LLM.
-    
+
+    Supports multiple platforms:
+    - Web (Selenium)
+    - Android (Appium)
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Updated state with generation plan
     """
     logger.info("=" * 60)
     logger.info("PLANNING NODE")
     logger.info("=" * 60)
-    
+
     state["current_node"] = "planning"
     state["node_history"] = state.get("node_history", []) + ["planning"]
-    
+
+    # Get platform type
+    module_spec = state.get("module_spec", {})
+    platform_type = state.get("platform_type", module_spec.get("platform_type", "web"))
+
+    logger.info(f"Platform: {platform_type}")
+
     # Build the planning prompt
     prompt = _build_planning_prompt(state)
     state["planning_prompt"] = prompt
-    
+
     logger.info("Building generation plan with LLM...")
-    
+
     # Initialize LLM client with high token limit for quality
     llm = BedrockClient(
         model_id=state.get("llm_model_id", "us.anthropic.claude-opus-4-5-20251101-v1:0"),
@@ -186,12 +332,15 @@ def planning_node(state: AgentState) -> AgentState:
         profile_name=state.get("llm_profile", "bedrock-user"),
         max_tokens=16384
     )
-    
+
+    # Get platform-specific system prompt
+    system_prompt = _get_planning_system_prompt(platform_type)
+
     try:
-        # Call LLM
+        # Call LLM with platform-specific prompt
         response = llm.chat(
             user_message=prompt,
-            system=PLANNING_SYSTEM_PROMPT
+            system=system_prompt
         )
         
         state["planning_response"] = response
@@ -275,7 +424,7 @@ def create_default_plan(state: AgentState) -> Dict[str, Any]:
         
         pages.append({
             "page_name": page_name,
-            "file_name": f"pages/{page_name.lower()}.py",
+            "file_name": f"pages/{_camel_to_snake(page_name)}.py",
             "elements": elements,
             "methods": methods,
             "inherits_from": "BasePage",

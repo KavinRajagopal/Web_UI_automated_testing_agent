@@ -29,3 +29,6 @@ pandas>=2.0.0
 # Selenium for web automation
 selenium>=4.15.0
 webdriver-manager>=4.0.0
+
+# Appium for mobile automation (Android/iOS)
+Appium-Python-Client>=3.0.0

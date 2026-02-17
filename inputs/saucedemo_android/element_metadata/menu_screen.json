@@ -1,0 +1,39 @@
+{
+  "page_name": "MenuScreen",
+  "page_url": null,
+  "description": "Side menu drawer for SauceLabs My Demo App",
+  "elements": [
+    {
+      "name": "login_menu_item",
+      "element_type": "button",
+      "description": "Login menu item to navigate to login screen",
+      "selectors": [
+        {"selector_type": "accessibility_id", "value": "Login Menu Item", "confidence": 0.95},
+        {"selector_type": "xpath", "value": "//android.widget.TextView[@content-desc='Login Menu Item']", "confidence": 0.85}
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "catalog_menu_item",
+      "element_type": "button",
+      "description": "Catalog menu item to navigate to products screen",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/itemTV", "confidence": 0.9},
+        {"selector_type": "xpath", "value": "//android.widget.TextView[@text='Catalog']", "confidence": 0.85}
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "menu_item",
+      "element_type": "text",
+      "description": "Generic menu item text view",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/itemTV", "confidence": 0.9}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    }
+  ]
+}

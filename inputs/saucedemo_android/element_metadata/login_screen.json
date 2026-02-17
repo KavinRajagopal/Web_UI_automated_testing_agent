@@ -1,0 +1,57 @@
+{
+  "page_name": "LoginScreen",
+  "page_url": null,
+  "description": "Login screen for SauceLabs My Demo App (accessed via menu)",
+  "elements": [
+    {
+      "name": "username_input",
+      "element_type": "input",
+      "description": "Username/email input field",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/nameET", "confidence": 0.95}
+      ],
+      "is_required": true,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "password_input",
+      "element_type": "input",
+      "description": "Password input field",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/passwordET", "confidence": 0.95}
+      ],
+      "is_required": true,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "login_button",
+      "element_type": "button",
+      "description": "Login button to submit credentials",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/loginBtn", "confidence": 0.95}
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "error_message",
+      "element_type": "image",
+      "description": "Error icon shown for invalid credentials",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/usernameErrorIV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "username_bob",
+      "element_type": "text",
+      "description": "Pre-filled username option (bob@example.com)",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/username1TV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    }
+  ]
+}

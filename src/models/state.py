@@ -51,9 +51,16 @@ class AgentState(TypedDict, total=False):
     """AWS profile name"""
     
     # =========================================================================
+    # PLATFORM (populated by onboarding node from module_spec)
+    # =========================================================================
+
+    platform_type: str
+    """Target platform: 'web' or 'android' (default: 'web')"""
+
+    # =========================================================================
     # INPUTS (populated by onboarding node)
     # =========================================================================
-    
+
     module_spec: Dict[str, Any]
     """Parsed module_spec.json as dict"""
     
@@ -217,7 +224,10 @@ def create_initial_state(
         llm_model_id=llm_model_id,
         llm_region=llm_region,
         llm_profile=llm_profile,
-        
+
+        # Platform (default to web, will be updated from module_spec)
+        platform_type="web",
+
         # Inputs (will be populated)
         module_spec={},
         test_cases=[],

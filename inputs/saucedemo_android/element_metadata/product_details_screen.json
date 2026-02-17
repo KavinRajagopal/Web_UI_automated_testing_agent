@@ -1,0 +1,90 @@
+{
+  "page_name": "ProductDetailsScreen",
+  "page_url": null,
+  "description": "Product details screen showing individual product information",
+  "elements": [
+    {
+      "name": "product_name",
+      "element_type": "text",
+      "description": "Product name/title on details page",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/productTV", "confidence": 0.95}
+      ],
+      "is_required": true,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "product_price",
+      "element_type": "text",
+      "description": "Product price on details page",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/priceTV", "confidence": 0.95}
+      ],
+      "is_required": true,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "add_to_cart_button",
+      "element_type": "button",
+      "description": "Add to cart button",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/cartBt", "confidence": 0.95},
+        {"selector_type": "xpath", "value": "//android.widget.Button[@text='Add to cart']", "confidence": 0.85}
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "back_button",
+      "element_type": "button",
+      "description": "Back/navigate up button",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/backIV", "confidence": 0.95},
+        {"selector_type": "accessibility_id", "value": "Navigate up", "confidence": 0.9}
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "plus_button",
+      "element_type": "button",
+      "description": "Increase quantity button",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/plusIV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "minus_button",
+      "element_type": "button",
+      "description": "Decrease quantity button",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/minusIV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "quantity_number",
+      "element_type": "text",
+      "description": "Current quantity number display",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/noTV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "cart_icon",
+      "element_type": "button",
+      "description": "Cart icon in header",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/cartIV", "confidence": 0.95},
+        {"selector_type": "accessibility_id", "value": "Displays number of items in your cart", "confidence": 0.9}
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    }
+  ]
+}

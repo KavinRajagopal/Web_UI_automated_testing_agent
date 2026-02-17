@@ -5,6 +5,10 @@ A. Syntax Check - Python ast.parse validation
 B. Import Check - Verify all imports resolve
 C. Pytest Collection - pytest --collect-only
 D. Test Execution - Actually run the tests and verify they pass
+
+Supports multiple platforms:
+- Web (Selenium) - default timeout 120s
+- Android (Appium) - timeout 600s (slower device execution)
 """
 
 import ast
@@ -23,6 +27,122 @@ from ..models.schemas import CheckpointStatus, CheckpointResult, VerificationRes
 from ..tools.code_executor import run_pytest
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# AST HELPER FUNCTIONS FOR CONSISTENCY CHECKING
+# =============================================================================
+
+def _extract_class_name(tree: ast.AST) -> Optional[str]:
+    """Extract the main class name from an AST.
+
+    Args:
+        tree: Parsed AST
+
+    Returns:
+        Class name or None if not found
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            return node.name
+    return None
+
+
+def _extract_public_methods(tree: ast.AST) -> List[str]:
+    """Extract public method names from a class in the AST.
+
+    Args:
+        tree: Parsed AST
+
+    Returns:
+        List of public method names (excluding __dunder__ and _private)
+    """
+    methods = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            for item in node.body:
+                if isinstance(item, ast.FunctionDef):
+                    # Include public methods and exclude __dunder__ methods
+                    if not item.name.startswith('_'):
+                        methods.append(item.name)
+    return methods
+
+
+def _extract_method_calls_on_pages(tree: ast.AST, page_classes: List[str]) -> Dict[str, List[str]]:
+    """Extract method calls made on page object instances.
+
+    This analyzes the AST to find patterns like:
+    - page.method_name()
+    - self.page.method_name()
+    - login_screen.enter_username()
+
+    Args:
+        tree: Parsed AST
+        page_classes: List of page class names to look for
+
+    Returns:
+        Dict mapping page class names to list of method names called
+    """
+    calls = {}
+
+    # Create lowercase mapping for class names
+    class_map = {cls.lower(): cls for cls in page_classes}
+    class_map.update({cls.lower().replace('page', ''): cls for cls in page_classes})
+    class_map.update({cls.lower().replace('screen', ''): cls for cls in page_classes})
+
+    # Also track variable assignments to map instances to classes
+    # e.g., login_screen = LoginScreen(driver) -> login_screen maps to LoginScreen
+    instance_to_class = {}
+
+    for node in ast.walk(tree):
+        # Track variable assignments of page objects
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and isinstance(node.value, ast.Call):
+                    if isinstance(node.value.func, ast.Name):
+                        class_name = node.value.func.id
+                        if class_name in page_classes:
+                            instance_to_class[target.id] = class_name
+
+        # Track method calls
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            method_name = node.func.attr
+
+            # Get the object the method is called on
+            obj = node.func.value
+
+            # Handle: instance.method() where instance was assigned a page class
+            if isinstance(obj, ast.Name):
+                var_name = obj.id
+                if var_name in instance_to_class:
+                    page_class = instance_to_class[var_name]
+                    if page_class not in calls:
+                        calls[page_class] = []
+                    if method_name not in calls[page_class]:
+                        calls[page_class].append(method_name)
+                # Also check if variable name matches a page class pattern
+                elif var_name.lower() in class_map:
+                    page_class = class_map[var_name.lower()]
+                    if page_class not in calls:
+                        calls[page_class] = []
+                    if method_name not in calls[page_class]:
+                        calls[page_class].append(method_name)
+
+            # Handle: self.page.method() patterns
+            elif isinstance(obj, ast.Attribute):
+                attr_name = obj.attr
+                if attr_name.lower() in class_map:
+                    page_class = class_map[attr_name.lower()]
+                    if page_class not in calls:
+                        calls[page_class] = []
+                    if method_name not in calls[page_class]:
+                        calls[page_class].append(method_name)
+
+    return calls
+
+# Platform-specific timeouts
+WEB_EXECUTION_TIMEOUT = 120  # 2 minutes for web tests
+ANDROID_EXECUTION_TIMEOUT = 600  # 10 minutes for Android tests (slower)
 
 
 def _check_syntax(code: str, filepath: str) -> Tuple[bool, str]:
@@ -90,28 +210,35 @@ def checkpoint_a_syntax(generated_files: Dict[str, str]) -> CheckpointResult:
     )
 
 
-def checkpoint_b_imports(generated_files: Dict[str, str]) -> CheckpointResult:
+def checkpoint_b_imports(generated_files: Dict[str, str], platform_type: str = "web") -> CheckpointResult:
     """
     Checkpoint B: Verify imports can be resolved.
-    
+
     Note: This checks standard library and installed packages only.
     Internal imports between generated files are assumed valid.
-    
+
     Args:
         generated_files: Dict of filepath -> code content
-        
+        platform_type: Target platform ('web' or 'android')
+
     Returns:
         CheckpointResult with import validation results
     """
     logger.info("Running Checkpoint B: Import Validation...")
-    
+
     files_checked = []
     files_passed = []
     files_failed = []
     errors = {}
-    
+
     # Known internal modules (generated by us)
     internal_modules = {"pages", "flows", "tests"}
+
+    # Known external modules that should be available
+    # Add appium for Android platform
+    known_external = {"selenium", "pytest", "allure"}
+    if platform_type == "android":
+        known_external.add("appium")
     
     for filepath, code in generated_files.items():
         if not filepath.endswith('.py'):
@@ -128,15 +255,15 @@ def checkpoint_b_imports(generated_files: Dict[str, str]) -> CheckpointResult:
                 if isinstance(node, ast.Import):
                     for alias in node.names:
                         module_name = alias.name.split('.')[0]
-                        if module_name not in internal_modules:
+                        if module_name not in internal_modules and module_name not in known_external:
                             if not _can_import(module_name):
                                 file_errors.append(f"Cannot import '{alias.name}'")
-                
+
                 # Check from ... import statements
                 elif isinstance(node, ast.ImportFrom):
                     if node.module:
                         module_name = node.module.split('.')[0]
-                        if module_name not in internal_modules:
+                        if module_name not in internal_modules and module_name not in known_external:
                             if not _can_import(module_name):
                                 file_errors.append(f"Cannot import from '{node.module}'")
             
@@ -172,6 +299,145 @@ def _can_import(module_name: str) -> bool:
         return spec is not None
     except (ModuleNotFoundError, ValueError):
         return False
+
+
+def checkpoint_b5_consistency(
+    generated_files: Dict[str, str],
+    base_page_methods: Optional[List[str]] = None
+) -> CheckpointResult:
+    """
+    Checkpoint B.5: Check method consistency between page objects and tests.
+
+    This runs BEFORE the expensive Checkpoint D test execution to catch
+    method mismatches early. Uses AST analysis to:
+    1. Extract methods from all generated page objects
+    2. Extract method calls from test files
+    3. Detect calls to methods that don't exist
+
+    Args:
+        generated_files: Dict of filepath -> code content
+        base_page_methods: Optional list of BasePage method names (for inclusion)
+
+    Returns:
+        CheckpointResult with consistency validation results
+    """
+    logger.info("Running Checkpoint B.5: Method Consistency...")
+
+    files_checked = []
+    files_passed = []
+    files_failed = []
+    errors = {}
+
+    # Default BasePage methods available to all page objects
+    if base_page_methods is None:
+        base_page_methods = [
+            # Common methods in both Web and Android BasePage
+            'find_element', 'find_element_clickable', 'find_element_visible',
+            'is_element_present', 'get_element_text', 'enter_text', 'click',
+            # Android-specific
+            'tap', 'long_press', 'hide_keyboard', 'is_keyboard_shown',
+            'swipe', 'swipe_up', 'swipe_down', 'scroll_to_element',
+            'get_current_activity', 'get_current_package', 'wait_for_activity',
+            'background_app', 'launch_app', 'close_app', 'clear_text',
+            # Web-specific
+            'navigate',
+        ]
+
+    # 1. Extract methods from all page objects
+    page_methods = {}
+    for filepath, code in generated_files.items():
+        if filepath.startswith("pages/") and filepath != "pages/base_page.py" and filepath.endswith(".py"):
+            if filepath == "pages/__init__.py":
+                continue
+
+            files_checked.append(filepath)
+
+            try:
+                tree = ast.parse(code)
+                class_name = _extract_class_name(tree)
+                if class_name:
+                    methods = _extract_public_methods(tree)
+                    # Include inherited BasePage methods
+                    all_methods = list(set(methods + base_page_methods))
+                    page_methods[class_name] = all_methods
+                    logger.debug(f"  {class_name}: {len(methods)} methods defined")
+            except SyntaxError as e:
+                # Syntax errors are caught in Checkpoint A
+                logger.debug(f"  Skipping {filepath} due to syntax error: {e}")
+                continue
+
+    if not page_methods:
+        logger.info("  No page objects found to validate")
+        return CheckpointResult(
+            checkpoint_name="B.5",
+            checkpoint_description="Method Consistency",
+            status=CheckpointStatus.PASSED,
+            files_checked=files_checked,
+            files_passed=files_checked,
+            files_failed=[],
+            errors={}
+        )
+
+    # 2. Extract method calls from tests and check consistency
+    for filepath, code in generated_files.items():
+        if filepath.startswith("tests/test_") and filepath.endswith(".py"):
+            files_checked.append(filepath)
+
+            try:
+                tree = ast.parse(code)
+                calls = _extract_method_calls_on_pages(tree, list(page_methods.keys()))
+
+                file_errors = []
+                for page_class, called_methods in calls.items():
+                    available = set(page_methods.get(page_class, []))
+                    for method in called_methods:
+                        if method not in available:
+                            file_errors.append(
+                                f"Test calls undefined method '{method}()' on {page_class}. "
+                                f"Available methods: {sorted(list(available)[:10])}..."
+                            )
+
+                if file_errors:
+                    files_failed.append(filepath)
+                    errors[filepath] = "\n".join(file_errors)
+                    logger.warning(f"  ✗ {filepath}: {len(file_errors)} method mismatches")
+                    for err in file_errors[:3]:  # Show first 3 errors
+                        logger.warning(f"    - {err[:100]}")
+                else:
+                    files_passed.append(filepath)
+                    logger.debug(f"  ✓ {filepath}")
+
+            except SyntaxError as e:
+                # Syntax errors are caught in Checkpoint A
+                logger.debug(f"  Skipping {filepath} due to syntax error: {e}")
+                continue
+
+    # Mark page files as passed (they were checked for method extraction)
+    for filepath in files_checked:
+        if filepath.startswith("pages/") and filepath not in files_failed:
+            if filepath not in files_passed:
+                files_passed.append(filepath)
+
+    status = CheckpointStatus.PASSED if not files_failed else CheckpointStatus.FAILED
+
+    if status == CheckpointStatus.PASSED:
+        logger.info(f"  ✓ All method calls are consistent")
+    else:
+        logger.warning(f"  ✗ Found method mismatches in {len(files_failed)} files")
+
+    return CheckpointResult(
+        checkpoint_name="B.5",
+        checkpoint_description="Method Consistency",
+        status=status,
+        files_checked=files_checked,
+        files_passed=files_passed,
+        files_failed=files_failed,
+        errors=errors,
+        metadata={
+            "page_classes_analyzed": len(page_methods),
+            "method_mismatches_found": len(errors)
+        }
+    )
 
 
 def checkpoint_c_collect(
@@ -282,26 +548,38 @@ def _extract_error_type(error_line: str) -> Optional[str]:
 def checkpoint_d_execution(
     generated_files: Dict[str, str],
     output_dir: str,
-    timeout: int = 120
+    timeout: int = None,
+    platform_type: str = "web"
 ) -> CheckpointResult:
     """
     Checkpoint D: Actually run the tests and verify they pass.
-    
+
     This catches runtime errors like:
     - AttributeError (wrong method names)
     - AssertionError (test logic failures)
     - Import errors at runtime
-    - Selenium/WebDriver issues
-    
+    - Selenium/WebDriver issues (web)
+    - Appium issues (Android)
+
     Args:
         generated_files: Dict of filepath -> code content
         output_dir: Output directory with test files
-        timeout: Max execution time in seconds
-        
+        timeout: Max execution time in seconds (auto-detected if None)
+        platform_type: Target platform ('web' or 'android')
+
     Returns:
         CheckpointResult with test execution results
     """
-    logger.info("Running Checkpoint D: Test Execution...")
+    # Set platform-appropriate timeout if not specified
+    if timeout is None:
+        if platform_type == "android":
+            timeout = ANDROID_EXECUTION_TIMEOUT
+            logger.info(f"Running Checkpoint D: Test Execution (Android, timeout={timeout}s)...")
+        else:
+            timeout = WEB_EXECUTION_TIMEOUT
+            logger.info(f"Running Checkpoint D: Test Execution (Web, timeout={timeout}s)...")
+    else:
+        logger.info(f"Running Checkpoint D: Test Execution (timeout={timeout}s)...")
     start_time = time.time()
     
     files_checked = []
@@ -523,48 +801,81 @@ def checkpoint_d_execution(
 def verification_node(state: AgentState) -> AgentState:
     """
     Verification node - runs all verification checkpoints.
-    
+
+    Supports multiple platforms:
+    - Web (Selenium)
+    - Android (Appium) - uses longer timeout
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Updated state with verification results
     """
     logger.info("=" * 60)
     logger.info("VERIFICATION NODE")
     logger.info("=" * 60)
-    
+
     state["current_node"] = "verification"
     state["node_history"] = state.get("node_history", []) + ["verification"]
-    
+
     generated_files = state.get("generated_files", {})
     output_path = state.get("output_path", "")
-    
+
+    # Get platform type
+    module_spec = state.get("module_spec", {})
+    platform_type = state.get("platform_type", module_spec.get("platform_type", "web"))
+
+    logger.info(f"Platform: {platform_type}")
+
     if not generated_files:
         logger.warning("No generated files to verify")
         state["verification_passed"] = False
         return state
-    
+
     # Ensure output directory exists
     os.makedirs(output_path, exist_ok=True)
-    
+
     # Run checkpoints
     checkpoint_a = checkpoint_a_syntax(generated_files)
     logger.info(f"Checkpoint A: {checkpoint_a.status.value} ({len(checkpoint_a.files_passed)}/{len(checkpoint_a.files_checked)} passed)")
-    
-    checkpoint_b = checkpoint_b_imports(generated_files)
+
+    checkpoint_b = checkpoint_b_imports(generated_files, platform_type=platform_type)
     logger.info(f"Checkpoint B: {checkpoint_b.status.value} ({len(checkpoint_b.files_passed)}/{len(checkpoint_b.files_checked)} passed)")
-    
+
+    # Run Checkpoint B.5: Method Consistency (only if A and B passed)
+    # This catches method mismatches BEFORE the expensive test execution
+    checkpoint_b5 = None
+    if (checkpoint_a.status == CheckpointStatus.PASSED and
+        checkpoint_b.status == CheckpointStatus.PASSED):
+
+        checkpoint_b5 = checkpoint_b5_consistency(generated_files)
+        logger.info(f"Checkpoint B.5: {checkpoint_b5.status.value} ({len(checkpoint_b5.files_passed)}/{len(checkpoint_b5.files_checked)} passed)")
+    else:
+        logger.info("Checkpoint B.5: SKIPPED (previous checkpoints failed)")
+        checkpoint_b5 = CheckpointResult(
+            checkpoint_name="B.5",
+            checkpoint_description="Method Consistency",
+            status=CheckpointStatus.SKIPPED,
+            files_checked=[],
+            files_passed=[],
+            files_failed=[],
+            errors={}
+        )
+
     checkpoint_c = checkpoint_c_collect(generated_files, output_path)
     logger.info(f"Checkpoint C: {checkpoint_c.status.value}")
-    
-    # Run Checkpoint D: Test Execution (only if A, B, C passed)
+
+    # Run Checkpoint D: Test Execution (only if A, B, B.5, C passed)
     checkpoint_d = None
     if (checkpoint_a.status == CheckpointStatus.PASSED and
         checkpoint_b.status == CheckpointStatus.PASSED and
+        checkpoint_b5.status == CheckpointStatus.PASSED and
         checkpoint_c.status == CheckpointStatus.PASSED):
-        
-        checkpoint_d = checkpoint_d_execution(generated_files, output_path)
+
+        checkpoint_d = checkpoint_d_execution(
+            generated_files, output_path, platform_type=platform_type
+        )
         test_info = checkpoint_d.metadata.get("tests_passed", 0)
         test_failed = checkpoint_d.metadata.get("tests_failed", 0)
         logger.info(f"Checkpoint D: {checkpoint_d.status.value} ({test_info} passed, {test_failed} failed)")
@@ -585,15 +896,17 @@ def verification_node(state: AgentState) -> AgentState:
     results = VerificationResults(
         checkpoint_a=checkpoint_a,
         checkpoint_b=checkpoint_b,
+        checkpoint_b5=checkpoint_b5,
         checkpoint_c=checkpoint_c,
         checkpoint_d=checkpoint_d,
         all_passed=False
     )
-    
-    # Check if all passed (including D)
+
+    # Check if all passed (including B.5 and D)
     all_passed = (
         checkpoint_a.status == CheckpointStatus.PASSED and
         checkpoint_b.status == CheckpointStatus.PASSED and
+        checkpoint_b5.status == CheckpointStatus.PASSED and
         checkpoint_c.status == CheckpointStatus.PASSED and
         checkpoint_d.status == CheckpointStatus.PASSED
     )
@@ -608,6 +921,7 @@ def verification_node(state: AgentState) -> AgentState:
     logger.info("VERIFICATION SUMMARY")
     logger.info(f"  Checkpoint A (Syntax): {checkpoint_a.status.value}")
     logger.info(f"  Checkpoint B (Imports): {checkpoint_b.status.value}")
+    logger.info(f"  Checkpoint B.5 (Consistency): {checkpoint_b5.status.value}")
     logger.info(f"  Checkpoint C (Collection): {checkpoint_c.status.value}")
     logger.info(f"  Checkpoint D (Execution): {checkpoint_d.status.value}")
     if checkpoint_d.metadata:
@@ -615,11 +929,11 @@ def verification_node(state: AgentState) -> AgentState:
                    f"{checkpoint_d.metadata.get('tests_failed', 0)} failed")
     logger.info(f"  Overall: {'PASSED' if all_passed else 'FAILED'}")
     logger.info("-" * 40)
-    
+
     # Collect all errors for recovery
     if not all_passed:
         all_errors = {}
-        for cp in [checkpoint_a, checkpoint_b, checkpoint_c, checkpoint_d]:
+        for cp in [checkpoint_a, checkpoint_b, checkpoint_b5, checkpoint_c, checkpoint_d]:
             if cp and cp.errors:
                 all_errors.update(cp.errors)
         

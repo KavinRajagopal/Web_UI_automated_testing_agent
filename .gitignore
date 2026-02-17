@@ -41,3 +41,5 @@ automation_repo/
 # OS
 .DS_Store
 Thumbs.db
+*.apk
+inputs/saucedemo_android/apps/

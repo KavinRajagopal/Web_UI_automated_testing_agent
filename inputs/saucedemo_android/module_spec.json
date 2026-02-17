@@ -1,0 +1,36 @@
+{
+  "module_name": "saucedemo_android",
+  "app_name": "SauceLabs My Demo App",
+  "platform_type": "android",
+  "android_config": {
+    "app_package": "com.saucelabs.mydemoapp.android",
+    "app_activity": ".view.activities.SplashActivity",
+    "device_name": "Android Emulator",
+    "platform_version": "11.0",
+    "automation_name": "UiAutomator2",
+    "app_path": "apps/mda.apk",
+    "no_reset": false
+  },
+  "environment": "local",
+  "selector_priority": ["id", "accessibility_id", "xpath"],
+  "avoid_selectors": ["css"],
+  "description": "SauceLabs My Demo App - Android equivalent of saucedemo.com. Note: App goes directly to Products screen, login is optional via menu.",
+  "pages": [
+    {
+      "name": "LoginScreen",
+      "element_metadata_file": "element_metadata/login_screen.json"
+    },
+    {
+      "name": "ProductsScreen",
+      "element_metadata_file": "element_metadata/products_screen.json"
+    },
+    {
+      "name": "CartScreen",
+      "element_metadata_file": "element_metadata/cart_screen.json"
+    }
+  ],
+  "test_credentials": {
+    "standard_user": "bod@example.com",
+    "password": "10203040"
+  }
+}

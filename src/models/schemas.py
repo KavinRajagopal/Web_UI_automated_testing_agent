@@ -18,15 +18,34 @@ from pydantic import BaseModel, Field, field_validator
 # ENUMS
 # =============================================================================
 
+class PlatformType(str, Enum):
+    """Target platform types for test generation."""
+    WEB = "web"
+    ANDROID = "android"
+    # Future: IOS = "ios"
+
+
+class AutomationName(str, Enum):
+    """Appium automation engine names."""
+    UIAUTOMATOR2 = "UiAutomator2"
+    ESPRESSO = "Espresso"
+    # Future: XCUITEST = "XCUITest"
+
+
 class SelectorType(str, Enum):
     """Selector strategy types, ordered by stability preference."""
+    # Web selectors
     ID = "id"
     DATA_TESTID = "data-testid"
     NAME = "name"
     ARIA_LABEL = "aria-label"
     CSS = "css"
     XPATH = "xpath"
-    
+    # Android/Mobile selectors
+    ACCESSIBILITY_ID = "accessibility_id"
+    ANDROID_UIAUTOMATOR = "android_uiautomator"
+    RESOURCE_ID = "resource_id"
+
     @classmethod
     def stability_order(cls) -> List["SelectorType"]:
         """Return selector types ordered by stability (best first)."""
@@ -37,6 +56,17 @@ class SelectorType(str, Enum):
             cls.ARIA_LABEL,
             cls.CSS,
             cls.XPATH
+        ]
+
+    @classmethod
+    def android_stability_order(cls) -> List["SelectorType"]:
+        """Return Android selector types ordered by stability (best first)."""
+        return [
+            cls.ACCESSIBILITY_ID,
+            cls.RESOURCE_ID,
+            cls.ID,
+            cls.XPATH,
+            cls.ANDROID_UIAUTOMATOR
         ]
 
 
@@ -56,27 +86,71 @@ class PageConfig(BaseModel):
     name: str = Field(..., description="Page class name (e.g., 'LoginPage')")
     url_pattern: Optional[str] = Field(None, description="URL pattern to match this page")
     element_metadata_file: Optional[str] = Field(None, description="Path to element JSON file")
-    
+
     class Config:
         extra = "allow"  # Allow additional fields
 
 
+class AndroidConfig(BaseModel):
+    """Android-specific configuration for Appium tests.
+
+    Required when platform_type='android' in ModuleSpec.
+    """
+    app_package: str = Field(..., description="Android app package name (e.g., 'com.example.app')")
+    app_activity: str = Field(..., description="Main activity to launch (e.g., '.MainActivity')")
+
+    device_name: str = Field(
+        default="Android Emulator",
+        description="Device name or emulator ID"
+    )
+    platform_version: Optional[str] = Field(
+        None,
+        description="Android version (e.g., '11.0')"
+    )
+    automation_name: AutomationName = Field(
+        default=AutomationName.UIAUTOMATOR2,
+        description="Appium automation engine"
+    )
+    app_path: Optional[str] = Field(
+        None,
+        description="Path to APK file (optional if app already installed)"
+    )
+    no_reset: bool = Field(
+        default=True,
+        description="Don't reset app state between tests"
+    )
+
+    class Config:
+        extra = "allow"  # Allow additional Appium capabilities
+
+
 class ModuleSpec(BaseModel):
     """Module specification from module_spec.json.
-    
+
     Defines the test module configuration including:
     - Target app details
+    - Platform type (web or android)
     - Browser/environment settings
     - Selector preferences
     - Pages to generate
     """
     module_name: str = Field(..., description="Name of the test module (e.g., 'authentication')")
     app_name: str = Field(default="TringPlay", description="Target application name")
-    app_url: str = Field(..., description="Base URL of the application")
-    
+    app_url: Optional[str] = Field(None, description="Base URL of the application (required for web)")
+
+    # Platform configuration
+    platform_type: PlatformType = Field(
+        default=PlatformType.WEB,
+        description="Target platform: 'web' (default) or 'android'"
+    )
+    android_config: Optional[AndroidConfig] = Field(
+        None,
+        description="Android/Appium configuration (required when platform_type='android')"
+    )
+
     # Environment
     environment: str = Field(default="staging", description="Target environment")
-    browser: str = Field(default="chrome", description="Target browser")
+    browser: str = Field(default="chrome", description="Target browser (web only)")
     
     # Selector policy
     selector_priority: List[str] = Field(
@@ -373,22 +447,26 @@ class CheckpointResult(BaseModel):
 
 class VerificationResults(BaseModel):
     """Combined results from all verification checkpoints."""
-    
+
     checkpoint_a: Optional[CheckpointResult] = Field(None, description="Syntax check")
     checkpoint_b: Optional[CheckpointResult] = Field(None, description="Import check")
+    checkpoint_b5: Optional[CheckpointResult] = Field(None, description="Method consistency check")
     checkpoint_c: Optional[CheckpointResult] = Field(None, description="Pytest collection")
     checkpoint_d: Optional[CheckpointResult] = Field(None, description="Test execution")
-    
+
     # Overall
     all_passed: bool = Field(default=False)
-    
+
     # Recovery tracking
     recovery_attempts: int = Field(default=0)
     files_recovered: List[str] = Field(default_factory=list)
-    
+
     def calculate_all_passed(self) -> bool:
         """Check if all checkpoints passed."""
-        checkpoints = [self.checkpoint_a, self.checkpoint_b, self.checkpoint_c, self.checkpoint_d]
+        checkpoints = [
+            self.checkpoint_a, self.checkpoint_b, self.checkpoint_b5,
+            self.checkpoint_c, self.checkpoint_d
+        ]
         for cp in checkpoints:
             if cp and cp.status == CheckpointStatus.FAILED:
                 return False

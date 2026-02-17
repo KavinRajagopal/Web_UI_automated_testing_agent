@@ -1,0 +1,88 @@
+{
+  "page_name": "CartScreen",
+  "page_url": null,
+  "description": "Shopping cart screen for SauceLabs My Demo App",
+  "elements": [
+    {
+      "name": "cart_title",
+      "element_type": "text",
+      "description": "Cart screen title",
+      "selectors": [
+        {"selector_type": "xpath", "value": "//android.widget.TextView[@text='My Cart']", "confidence": 0.9}
+      ],
+      "is_required": true,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "item_title",
+      "element_type": "text",
+      "description": "Cart item product title",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/titleTV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "item_price",
+      "element_type": "text",
+      "description": "Cart item price",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/priceTV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "item_quantity",
+      "element_type": "text",
+      "description": "Cart item quantity display",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/noTV", "confidence": 0.95}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    },
+    {
+      "name": "remove_item_button",
+      "element_type": "button",
+      "description": "Button to remove item from cart",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/removeBt", "confidence": 0.95},
+        {"selector_type": "accessibility_id", "value": "Removes product from cart", "confidence": 0.9}
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "checkout_button",
+      "element_type": "button",
+      "description": "Button to proceed to checkout",
+      "selectors": [
+        {"selector_type": "id", "value": "com.saucelabs.mydemoapp.android:id/cartBt", "confidence": 0.95}
+      ],
+      "is_required": true,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "continue_shopping_button",
+      "element_type": "button",
+      "description": "Button to go back to products",
+      "selectors": [
+        {"selector_type": "accessibility_id", "value": "Go Shopping button", "confidence": 0.9}
+      ],
+      "is_required": false,
+      "wait_strategy": "clickable"
+    },
+    {
+      "name": "empty_cart_message",
+      "element_type": "text",
+      "description": "Message shown when cart is empty",
+      "selectors": [
+        {"selector_type": "xpath", "value": "//android.widget.TextView[@text='No Items']", "confidence": 0.9}
+      ],
+      "is_required": false,
+      "wait_strategy": "visible"
+    }
+  ]
+}

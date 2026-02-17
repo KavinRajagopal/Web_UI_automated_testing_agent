@@ -1,0 +1,10 @@
+test_id,test_name,module,priority,preconditions,steps,expected_result,test_data,tags,page_name
+TC_LOGIN_001,Valid Login,saucedemo_android,P0,App launched on Products screen,Tap menu button|Tap Log In menu item|Enter username|Enter password|Tap login button,User logged in|Products screen displayed,username=bod@example.com|password=10203040,"login,smoke,positive",LoginScreen
+TC_LOGIN_002,Invalid Password,saucedemo_android,P1,App launched and navigated to login via menu,Enter valid username|Enter invalid password|Tap login button,Error message displayed,username=bod@example.com|password=wrongpass,"login,negative",LoginScreen
+TC_LOGIN_003,Empty Credentials,saucedemo_android,P1,App launched and navigated to login via menu,Leave username empty|Leave password empty|Tap login button,Error message for required fields displayed,,"login,negative",LoginScreen
+TC_PRODUCTS_001,View Products List,saucedemo_android,P0,App launched,View products screen,Products list displayed with items,,"products,smoke",ProductsScreen
+TC_PRODUCTS_002,Add Product to Cart,saucedemo_android,P0,User logged in on products screen,Tap on first product|Tap add to cart button,Product added to cart|Cart badge updated,,"products,cart,smoke",ProductsScreen
+TC_PRODUCTS_003,View Product Details,saucedemo_android,P1,User logged in on products screen,Tap on a product item,Product details screen displayed with name and price,,"products,details",ProductsScreen
+TC_CART_001,View Cart,saucedemo_android,P0,User has items in cart,Tap cart icon,Cart screen displayed with added items,,"cart,smoke",CartScreen
+TC_CART_002,Remove Item from Cart,saucedemo_android,P1,User has items in cart,Navigate to cart|Tap remove button on item,Item removed from cart|Cart updated,,"cart,negative",CartScreen
+TC_CART_003,Proceed to Checkout,saucedemo_android,P1,User has items in cart,Navigate to cart|Tap checkout button,Checkout screen displayed,,"cart,checkout",CartScreen
